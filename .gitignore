@@ -27,6 +27,10 @@
 *.exe
 *.out
 *.app
-*.svn
 userOnline
 deviceOnline
+
+
+# dir
+./objects
+    
