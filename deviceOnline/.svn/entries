@@ -1,83 +1,0 @@
-10
-
-dir
-90
-https://172.16.27.3:4443/svn/AlarmServerSys/trunk/deviceOnline
-https://172.16.27.3:4443/svn/AlarmServerSys
-
-
-
-2015-09-08T01:38:03.160125Z
-90
-houbin
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-9258544e-3404-7245-9918-7f1d6562b5ee
-
-test
-dir
-
-release
-dir
-
-include
-dir
-
-debug
-dir
-
-lib
-dir
-
-src
-dir
-
-obj
-dir
-
-makefile
-file
-
-
-
-
-2015-09-08T01:39:08.066844Z
-e671378912d60cace6d2960a9513a815
-2015-09-01T02:57:20.488250Z
-59
-houbin
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-1708
-
