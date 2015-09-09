@@ -71,11 +71,15 @@ void CLogicOpt::StartLogicOpt(const std::string& message)
     }
 
 SEND_RESPONSE:
-    // 送到回复消息模块, 统一发送
-    reply_msg.dev_id = conn_->dev_id;
-    reply_msg.reply_msg = responseToClient_;
-    reply_msg.ct = NULL;
-    g_msg_reply_queue->SubmitMsg(reply_msg);
+
+    // 转义\r\n为\\r\\n
+    string response_msg = utils::ReplaceString(responseToClient_, "\\r\\n", "\\\\r\\\\n");
+    response_msg.append("\r\n");
+    if (!SocketOperate::WriteSfd(conn_->sfd, response_msg.c_str(), response_msg.length()))
+    {
+        LOG4CXX_ERROR(g_logger, "SocketOperate::WriteSfd error, fd " << conn_->sfd << ", reply_msg " << responseToClient_);
+        ret = -ERROR_PUSH_MESSAGE;
+    }
 
     return;
 }

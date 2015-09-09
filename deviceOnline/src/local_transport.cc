@@ -30,8 +30,12 @@ void PushMsgRespContext::Finish(int ret)
 {
     string push_msg_resp;
     CJsonOpt json_opt;
+
     push_msg_resp = json_opt.JsonJoinPushMsgRes(send_cnt_, ret);
-    if (!SocketOperate::WriteSfd(sfd_, push_msg_resp.c_str(), push_msg_resp.size()))
+    string response_msg = utils::ReplaceString(push_msg_resp, "\\r\\n", "\\\\r\\\\n");
+    response_msg.append("\r\n");
+
+    if (!SocketOperate::WriteSfd(sfd_, response_msg.c_str(), response_msg.size()))
     {
         LOG4CXX_ERROR(g_logger, "send push msg reponse error, sfd " << sfd_);
     }
@@ -144,25 +148,61 @@ void CLocalTransport::ReadCb(struct bufferevent *bev, void *arg)
 
 void CLocalTransport::HandleMsg(LOCAL_REV_DATA *ptr_data, string reply_msg_str)
 {
-    CJsonOpt json_opt;
-    int sfd = ptr_data->sfd;
-
-    string send_msg;
+    int ret = 0;
     int send_cnt = 0;
     string dev_id;
-    if (!json_opt.RestructJsonStringToDev(reply_msg_str, send_msg, send_cnt, dev_id))
+    CJsonOpt json_opt;
+    string send_msg;
+    ReplyMsg reply_msg;
+    string method;
+    PushMsgRespContext *push_msg_resp_ct = NULL;
+
+    int sfd = ptr_data->sfd;
+
+    json_opt.setJsonString(reply_msg_str);
+    ret = json_opt.JsonParseCommon();
+    if (ret != 0)
     {
-        LOG4CXX_ERROR(g_logger, "CJsonOpt::RestructJsonStringToDev error");
+        LOG4CXX_ERROR(g_logger, "JsonParseCommon error, ret " << ret);
         return;
     }
 
-    // submit to reply msg queue
-    PushMsgRespContext *push_msg_resp_ct = new PushMsgRespContext(sfd, send_cnt);
-    ReplyMsg reply_msg;
-    reply_msg.dev_id = dev_id;
-    reply_msg.reply_msg = send_msg;
-    reply_msg.ct = push_msg_resp_ct;
-    g_msg_reply_queue->SubmitMsg(reply_msg);
+    send_cnt = json_opt.GetSendCnt();
+    json_opt.GetMethod(method);
+
+    if (method == METHOD_PUSH_MSG)
+    {
+        ret = json_opt.JsonParsePushMsg(dev_id);
+        if (ret != 0)
+        {
+            LOG4CXX_ERROR(g_logger, "JsonParsePushMsg error, ret " << ret);
+            goto error;
+        }
+
+        // submit to reply msg queue
+        push_msg_resp_ct = new PushMsgRespContext(sfd, send_cnt);
+        reply_msg.dev_id = dev_id;
+        reply_msg.reply_msg = json_opt.JsonJoinPushMsgToDev();
+        reply_msg.ct = push_msg_resp_ct;
+        g_msg_reply_queue->SubmitMsg(reply_msg);
+    }
+    else
+    {
+        LOG4CXX_ERROR(g_logger, "method is invalid");
+        return;
+    }
+
+    return;
+
+error:
+    // ×ªÒå\r\nÎª\\r\\n
+    string push_msg_resp = json_opt.JsonJoinPushMsgRes(send_cnt, ret);
+    string response_msg = utils::ReplaceString(push_msg_resp, "\\r\\n", "\\\\r\\\\n");
+    response_msg.append("\r\n");
+    if (!SocketOperate::WriteSfd(sfd, response_msg.c_str(), response_msg.length()))
+    {
+        LOG4CXX_ERROR(g_logger, "SocketOperate::WriteSfd error, fd " << sfd << ", reply_msg " << response_msg);
+    }
 
     return;
 }

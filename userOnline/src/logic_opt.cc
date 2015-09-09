@@ -66,12 +66,13 @@ void CLogicOpt::StartLogicOpt(const std::string& message)
     }
 
 SEND_RESPONSE:
-    // 送到推送消息模块, 统一发送
-    reply_msg.guid = conn_->guid;
-    reply_msg.fd = conn_->sfd;
-    reply_msg.reply_msg = responseToClient_;
-    reply_msg.ct = NULL;
-    g_msg_reply_queue->SubmitMsg(reply_msg);
+    // 转义\r\n为\\r\\n
+    string response_msg = utils::ReplaceString(responseToClient_, "\\r\\n", "\\\\r\\\\n");
+    response_msg.append("\r\n");
+    if (!SocketOperate::WriteSfd(conn_->sfd, response_msg.c_str(), response_msg.size()))
+    {
+        LOG4CXX_ERROR(g_logger, "send push msg reponse error, sfd " << conn_->sfd);
+    }
 
     return;
 }

@@ -31,6 +31,11 @@ int CJsonOpt::GetMethod(string &method)
     return 0;
 }
 
+int CJsonOpt::GetMid()
+{
+    return mid_;
+}
+
 bool CJsonOpt::VerifyJsonField(const string &field)
 {
     if (in_.find(field) != in_.end())
@@ -78,6 +83,19 @@ int CJsonOpt::JsonParseBeacon(string &session_id)
     return 0;
 }
 
+int CJsonOpt::JsonParsePushMsg(string &guid)
+{
+    if (!(VerifyJsonField(JK_SESSION) && VerifyJsonField(JK_PARAM)))
+    {
+        return -1;
+    }
+
+    guid = in_[JK_SESSION].as_string();
+    out_ = in_[JK_PARAM].as_node();
+
+    return 0;
+}
+
 bool CJsonOpt::JsonJoinCommon(string method, int ret)
 {
     out_.push_back(JSONNode(JK_MESSAGE_ID, mid_));
@@ -94,30 +112,9 @@ string CJsonOpt::JsonJoinBeaconRes(int ret)
     return out_.write();
 }
 
-bool CJsonOpt::RestructJsonStringToRemote(string json_in_string, string &json_out_string, int &mid, string &guid)
+string CJsonOpt::JsonJoinPushMsgToClient()
 {
-    try
-    {
-        out_ = libjson::parse(json_in_string.c_str());
-    }
-    catch(...)
-    {
-        LOG4CXX_WARN(g_logger, "CJsonOpt::RestructJsonStringToRemote::parse failed. string = " << json_in_string);
-        return false;
-    }
-
-    if (!(VerifyJsonField(JK_MESSAGE_ID) && (VerifyJsonField(JK_SESSION))))
-    {
-        return false;
-    }
-
-    mid = out_[JK_MESSAGE_ID].as_int();
-    guid = out_[JK_SESSION].as_string();
-    out_.pop_back(JK_SEND_CNT);
-    out_.pop_back(JK_METHOD);
-    out_.pop_back(JK_DEV_ID);
-
-    return true;
+    return out_.write();
 }
 
 string CJsonOpt::JsonJoinPushMsgRes(int mid, int result)

@@ -28,10 +28,12 @@ PushMsgRespContext::~PushMsgRespContext()
 
 void PushMsgRespContext::Finish(int ret)
 {
-    string push_msg_resp;
+    // 转义\r\n为\\r\\n
     CJsonOpt json_opt;
-    push_msg_resp = json_opt.JsonJoinPushMsgRes(mid_, ret);
-    if (!SocketOperate::WriteSfd(sfd_, push_msg_resp.c_str(), push_msg_resp.size()))
+    string push_msg_resp = json_opt.JsonJoinPushMsgRes(mid_, ret);
+    string response_msg = utils::ReplaceString(push_msg_resp, "\\r\\n", "\\\\r\\\\n");
+    response_msg.append("\r\n");
+    if (!SocketOperate::WriteSfd(sfd_, response_msg.c_str(), response_msg.size()))
     {
         LOG4CXX_ERROR(g_logger, "send push msg reponse error, sfd " << sfd_);
     }
@@ -144,28 +146,61 @@ void CLocalTransport::ReadCb(struct bufferevent *bev, void *arg)
 
 void CLocalTransport::HandleMsg(LOCAL_REV_DATA *ptr_data, string reply_msg_str)
 {
-    CJsonOpt json_opt;
-    int sfd = ptr_data->sfd;
-
-    string send_msg;
+    int ret = 0;
     int mid = 0;
     string guid;
-    if (!json_opt.RestructJsonStringToRemote(reply_msg_str, send_msg, mid, guid))
+    string method;
+    CJsonOpt json_opt;
+    string send_msg;
+
+    int sfd = ptr_data->sfd;
+
+    json_opt.setJsonString(reply_msg_str);
+    ret = json_opt.JsonParseCommon();
+    if (ret != 0)
     {
-        LOG4CXX_ERROR(g_logger, "CJsonOpt::RestructJsonStringToGuid error");
+        LOG4CXX_ERROR(g_logger, "json parse common error");
         return;
     }
 
-    // submit to reply msg queue
-    PushMsgRespContext *push_msg_resp_ct = new PushMsgRespContext(sfd, mid);
-    ReplyMsg reply_msg;
-    reply_msg.guid = guid;
-    reply_msg.fd = -1;
-    reply_msg.reply_msg = send_msg;
-    reply_msg.ct = push_msg_resp_ct;
-    g_msg_reply_queue->SubmitMsg(reply_msg);
+    mid = json_opt.GetMid();
+
+    json_opt.GetMethod(method);
+
+    if (method == METHOD_PUSH_MSG)
+    {
+        ret = json_opt.JsonParsePushMsg(guid);
+        if (ret != 0)
+        {
+            LOG4CXX_ERROR(g_logger, "json parse PushMsg error");
+            goto error;
+        }
+
+        // submit to reply msg queue
+        PushMsgRespContext *push_msg_resp_ct = new PushMsgRespContext(sfd, mid);
+        ReplyMsg reply_msg;
+        reply_msg.guid = guid;
+        reply_msg.reply_msg = json_opt.JsonJoinPushMsgToClient();
+        reply_msg.ct = push_msg_resp_ct;
+        g_msg_reply_queue->SubmitMsg(reply_msg);
+    }
+    else
+    {
+        LOG4CXX_ERROR(g_logger, "method is invalid");
+        return;
+    }
 
     return;
+
+error:
+    // 转义\r\n为\\r\\n
+    string push_msg_resp = json_opt.JsonJoinPushMsgRes(mid, ret);
+    string response_msg = utils::ReplaceString(push_msg_resp, "\\r\\n", "\\\\r\\\\n");
+    response_msg.append("\r\n");
+    if (!SocketOperate::WriteSfd(sfd, response_msg.c_str(), response_msg.size()))
+    {
+        LOG4CXX_ERROR(g_logger, "send push msg reponse error, sfd " << sfd);
+    }
 }
 
 void CLocalTransport::ErrorCb(struct bufferevent *bev, short event, void *arg)

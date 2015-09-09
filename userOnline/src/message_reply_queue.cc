@@ -50,26 +50,19 @@ void *MsgReplyQueue::Entry()
             LOG4CXX_TRACE(g_logger, "MsgReplyQueue pop one reply msg, guid" << reply_msg.guid<< ", reply msg " << reply_msg.reply_msg);
 
             int fd = -1;
-            if (reply_msg.fd <= 0)
+            ret = CLogicOpt::GetGuidFdFromCache(reply_msg.guid, fd);
+            if (ret != 0) 
             {
-                ret = CLogicOpt::GetGuidFdFromCache(reply_msg.guid, fd);
-                if (ret != 0) 
-                {
-                    LOG4CXX_ERROR(g_logger, "CRedisOpt::GetDeviceFdFromCache error, guid" << reply_msg.guid << ", ret %d" << ret);
-                    ret = -ERROR_GET_DEVICE_FD_FROM_CACHE;
-                    goto entry_continue;
-                }
-
-                if (fd < 0)
-                {
-                    LOG4CXX_ERROR(g_logger, "MsgReplyQueue fd " << fd);
-                    ret = -ERROR_FD_INVALID;
-                    goto entry_continue;
-                }
+                LOG4CXX_ERROR(g_logger, "CRedisOpt::GetDeviceFdFromCache error, guid" << reply_msg.guid << ", ret %d" << ret);
+                ret = -ERROR_GET_DEVICE_FD_FROM_CACHE;
+                goto entry_continue;
             }
-            else
+
+            if (fd < 0)
             {
-                fd = reply_msg.fd;
+                LOG4CXX_ERROR(g_logger, "MsgReplyQueue fd " << fd);
+                ret = -ERROR_FD_INVALID;
+                goto entry_continue;
             }
 
             // TODO: 转义\r\n为\\r\\n
@@ -78,7 +71,6 @@ void *MsgReplyQueue::Entry()
             if (!SocketOperate::WriteSfd(fd, response_msg.c_str(), response_msg.length()))
             {
                 LOG4CXX_ERROR(g_logger, "SocketOperate::WriteSfd error, fd " << fd << " reply_msg " << reply_msg.reply_msg);
-                SocketOperate::CloseSocket(fd);
                 ret = -ERROR_PUSH_MESSAGE;
                 goto entry_continue;
             }

@@ -23,11 +23,13 @@ public:
 
 	void setJsonString(const std::string &msg);
     int GetMethod(string &method);
+    int GetSendCnt();
     bool VerifyJsonField(const string &field);
 
     bool JsonParseCommon();
     int JsonParseBeacon(string &dev_id);
     int JsonParseLogin(string &dev_id, string &auth_data);
+    int JsonParsePushMsg(string &dev_id);
 
 public:
     bool JsonJoinCommon(string method, int ret = 0);
@@ -35,9 +37,8 @@ public:
     string JsonJoinDeviceStateNotice(string dev_id, int state, string time);
     string JsonJoinLoginRes(int ret = 0);
 
-    bool RestructJsonStringToDev(std::string json_in_string, std::string &json_out_string, int &send_cnt, std::string &dev_id);
-    string JsonJoinPushMsgRes(int send_cnt, int result);
-    
+    string JsonJoinPushMsgToDev();
+    string JsonJoinPushMsgRes(int send_cnt, int result = 0);
 
     //for test
     string JsonJoinUserLogin();

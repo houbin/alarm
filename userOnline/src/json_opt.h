@@ -23,17 +23,18 @@ public:
 
 	void setJsonString(const std::string &msg);
     int GetMethod(string &method);
+    int GetMid();
     bool VerifyJsonField(const string &field);
 
     bool JsonParseCommon();
     int JsonParseBeacon(string &session_id);
+    int JsonParsePushMsg(string &guid);
 
 public:
     bool JsonJoinCommon(string method, int ret = 0);
     string JsonJoinBeaconRes(int ret = 0);
 
-    bool RestructJsonStringToRemote(string json_in_string, string &json_out_string, int &mid, string &guid);
-
+    string JsonJoinPushMsgToClient();
     string JsonJoinPushMsgRes(int mid, int result);
 
     //for test

@@ -14,7 +14,6 @@ using namespace util;
 struct ReplyMsg
 {
     string guid;
-    int fd;
     string reply_msg;
 
     Context *ct;

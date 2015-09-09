@@ -70,8 +70,7 @@ void *MsgReplyQueue::Entry()
             response_msg.append("\r\n");
             if (!SocketOperate::WriteSfd(fd, response_msg.c_str(), response_msg.length()))
             {
-                LOG4CXX_ERROR(g_logger, "SocketOperate::WriteSfd error, fd " << fd << " reply_msg " << reply_msg.reply_msg);
-                SocketOperate::CloseSocket(fd);
+                LOG4CXX_ERROR(g_logger, "SocketOperate::WriteSfd error, fd " << fd << " reply_msg " << response_msg);
                 ret = -ERROR_PUSH_MESSAGE;
                 goto entry_continue;
             }

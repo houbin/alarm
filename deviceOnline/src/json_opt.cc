@@ -31,6 +31,11 @@ int CJsonOpt::GetMethod(string &method)
     return 0;
 }
 
+int CJsonOpt::GetSendCnt()
+{
+    return send_cnt_;
+}
+
 bool CJsonOpt::VerifyJsonField(const string &field)
 {
     if (in_.find(field) != in_.end())
@@ -92,6 +97,19 @@ int CJsonOpt::JsonParseLogin(string &dev_id, string &auth_data)
     return 0;
 }
 
+int CJsonOpt::JsonParsePushMsg(string &dev_id)
+{
+    if (!(VerifyJsonField(JK_PARAM) && VerifyJsonField(JK_DEV_ID)))
+    {
+        return -1;
+    }
+
+    dev_id = in_[JK_DEV_ID].as_string();
+    out_ = in_[JK_PARAM].as_node();
+
+    return 0;
+}
+
 bool CJsonOpt::JsonJoinCommon(string method, int ret)
 {
     out_.push_back(JSONNode(JK_SEND_CNT, send_cnt_));
@@ -108,41 +126,6 @@ bool CJsonOpt::JsonJoinCommon(string method, int ret)
 string CJsonOpt::JsonJoinBeaconRes(int ret)
 {
     JsonJoinCommon(METHOD_KEEP_ONLINE, ret);
-
-    return out_.write();
-}
-
-bool CJsonOpt::RestructJsonStringToDev(string json_in_string, string &json_out_string, int &send_cnt, string &dev_id)
-{
-    try
-    {
-        out_ = libjson::parse(json_in_string.c_str());
-    }
-    catch(...)
-    {
-        LOG4CXX_WARN(g_logger, "CJsonOpt::RestructJsonStringToDev:parse failed. string = " << json_in_string);
-        return false;
-    }
-
-    if (!(VerifyJsonField(JK_SEND_CNT) && (VerifyJsonField(JK_DEV_ID))))
-    {
-        return false;
-    }
-
-    send_cnt = out_[JK_SEND_CNT].as_int();
-    dev_id = out_[JK_DEV_ID].as_string();
-    out_.pop_back(JK_SEND_CNT);
-    out_.pop_back(JK_METHOD);
-    out_.pop_back(JK_DEV_ID);
-
-    return true;
-}
-
-string CJsonOpt::JsonJoinPushMsgRes(int send_cnt, int result)
-{
-    out_.push_back(JSONNode(JK_SEND_CNT, send_cnt));
-    out_.push_back(JSONNode(JK_METHOD, METHOD_ON_PUSH_MSG));
-    out_.push_back(JSONNode(JK_RESULT, result));
 
     return out_.write();
 }
@@ -179,8 +162,19 @@ string CJsonOpt::JsonJoinLoginRes(int ret)
     return out_.write();
 }
 
+string CJsonOpt::JsonJoinPushMsgToDev()
+{
+    return out_.write();
+}
 
+string CJsonOpt::JsonJoinPushMsgRes(int send_cnt, int result)
+{
+    out_.push_back(JSONNode(JK_SEND_CNT, send_cnt));
+    out_.push_back(JSONNode(JK_METHOD, METHOD_ON_PUSH_MSG));
+    out_.push_back(JSONNode(JK_RESULT, result));
 
+    return out_.write();
+}
 
 // for test
 string CJsonOpt::JsonJoinUserLogin()
