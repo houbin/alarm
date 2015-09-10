@@ -20,7 +20,7 @@ RELEASE_DIR = ${MAKE_DIR}/release
 CFLAGS = -Wall -c -fmessage-length=0 -DNDEBUG
 FLAG_DEBUG = -g 
 INCLUDE = -I${INCLUDE_DIR} -I${SRC_DIR} -I/usr/include/boost148
-LIB = -lhiredis -llog4cxx -levent -ljson -lboost_system -lboost_regex -L${OBJ_DIR}
+LIB = -lhiredis -llog4cxx -ljson -lboost_system -lboost_regex -L${OBJ_DIR} -L/usr/local/lib -levent
 
 # 可执行程序名称
 EXEC = deviceOnline
