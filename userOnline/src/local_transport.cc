@@ -156,8 +156,7 @@ void CLocalTransport::HandleMsg(LOCAL_REV_DATA *ptr_data, string reply_msg_str)
     int sfd = ptr_data->sfd;
 
     json_opt.setJsonString(reply_msg_str);
-    ret = json_opt.JsonParseCommon();
-    if (ret != 0)
+    if(!json_opt.JsonParseCommon())
     {
         LOG4CXX_ERROR(g_logger, "json parse common error");
         return;

@@ -17,6 +17,7 @@
 #include "message_reply_queue.h"
 #include "redis_opt.h"
 #include "user_alive.h"
+#include "local_transport.h"
 
 static void InitConfigure();
 static void SettingsAndPrint();
@@ -66,6 +67,10 @@ int main(int argc, char **argv)
     
     // clear redis data
     ClearGuidFdCache();
+
+    // start local transport
+    CLocalTransport *local_transport = CLocalTransport::GetInstance();
+    local_transport->SetupLocalTransport();
 
 	Run();
 

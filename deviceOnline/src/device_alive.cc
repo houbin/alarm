@@ -17,6 +17,7 @@
 #include "redis_opt.h"
 #include "device_alive.h"
 #include "test.h"
+#include "local_transport.h"
 
 static void InitConfigure();
 static void SettingsAndPrint();
@@ -79,6 +80,10 @@ int main(int argc, char **argv)
     // start test thread
     //g_test_thread = new TestThread;
     //g_test_thread->Create();
+    //
+    // start local_transport
+    CLocalTransport *local_transport = CLocalTransport::GetInstance();
+    local_transport->SetupLocalTransport();
 
 	Run();
 
