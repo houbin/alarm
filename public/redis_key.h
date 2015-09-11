@@ -7,12 +7,12 @@ enum DB_NUMBER
 {
 	SESSION = 0,
 	STATUS  = 2,
-	MESSAGE = 3,
-	DEVICE = 4,
-	HUMITURE = 5,
-	DEVICE_USER = 6,
-    CLIENT_USER = 7
+	REDIS_DEVICE_INFO = 6,
+    REDIS_CLIENT_INFO = 7
 };
+
+#define REDIS_FIELD_FD          "fd"
+#define REDIS_FIELD_ADDR        "addr"
 
 static inline std::string int2str(int v)
 {

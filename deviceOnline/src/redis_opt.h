@@ -60,6 +60,7 @@ public:
     // need version of redis not lower than 2.8.
     // The newest stable version the better.
     bool Scan(long long cursor, std::vector<std::string> &vec_keys, long long &next_cursor);
+    bool Hscan(long long cursor, std::vector<std::string> &vec_keys, long long &next_cursor);
     
 private:
 

@@ -7,7 +7,7 @@
 extern MsgReplyQueue *g_msg_reply_queue;
 extern HttpClient *g_http_client;
 
-extern void ClearDeviceFdCache();
+extern void ClearDeviceCache();
 extern int StartHttpClient();
 
 #endif

@@ -112,12 +112,28 @@ int CLogicOpt::DeviceLogin()
         conn_->is_login = true;
         conn_->dev_id = dev_id_;
 
-        // 更新设备对应的fd
+        // 更新设备在redis中的信息
         ret = CLogicOpt::SetDeviceFdCache(conn_->dev_id, conn_->sfd);
         if (ret != 0)
         {
 	        LOG4CXX_ERROR(g_logger, "DeviceBeacon set fd cache failed");
             ret = -ERROR_SET_DEVICE_FD_CACHE;
+            goto out;
+        }
+
+        struct sockaddr_in addr;
+        socklen_t len = sizeof(struct sockaddr);
+        ret = getsockname(conn_->sfd, (struct sockaddr *)&addr, &len);
+        if (ret != 0)
+        {
+	        LOG4CXX_ERROR(g_logger, "DeviceBeacon getsockname error");
+            goto out;
+        }
+        string addr_str(inet_ntoa(addr.sin_addr));
+        ret = CLogicOpt::SetDeviceAddrCache(conn_->dev_id, addr_str);
+        if (ret != 0)
+        {
+	        LOG4CXX_ERROR(g_logger, "DeviceBeacon getsockname error");
             goto out;
         }
 
@@ -182,9 +198,9 @@ int CLogicOpt::SetDeviceFdCache(string dev_id, int fd)
     redisContext* redis_con = CRedisConnPool::GetInstance()->GetRedisContext();
     CRedisOpt redis_opt;
     redis_opt.SetRedisContext(redis_con);
-    redis_opt.SelectDB(DEVICE);
+    redis_opt.SelectDB(REDIS_DEVICE_INFO);
 
-    if(!redis_opt.Set(dev_id, fd))
+    if(!redis_opt.Hset(dev_id, REDIS_FIELD_FD, fd))
     {
         ret = -ERROR_SET_DEVICE_FD_CACHE;
         goto out;
@@ -202,10 +218,10 @@ int CLogicOpt::GetDeviceFdFromCache(string dev_id, int &fd)
     redisContext* redis_con = CRedisConnPool::GetInstance()->GetRedisContext();
     CRedisOpt redis_opt;
     redis_opt.SetRedisContext(redis_con);
-    redis_opt.SelectDB(DEVICE);
+    redis_opt.SelectDB(REDIS_DEVICE_INFO);
 
     string fd_str;
-    if(!redis_opt.Get(dev_id, fd_str))
+    if(!redis_opt.Hget(dev_id, REDIS_FIELD_FD, fd_str))
     {
         ret = -ERROR_GET_DEVICE_FD_FROM_CACHE;
         goto out;
@@ -218,34 +234,68 @@ out:
     return ret;
 }
 
-#if 0
-int CLogicOpt::InvalidDeviceFdFromCache(string dev_id)
-{
-    int ret = 0;
-    redisContext* redis_con = CRedisConnPool::GetInstance()->GetRedisContext();
-    CRedisOpt redis_opt;
-    redis_opt.SetRedisContext(redis_con);
-    redis_opt.SelectDB(DEVICE);
-
-    if (!redis_opt.Set(dev_id, -1))
-    {
-        ret = -ERROR_SET_DEVICE_FD_CACHE;
-    }
-
-	CRedisConnPool::GetInstance()->ReleaseRedisContext(redis_con);
-
-    return ret;
-}
-#endif 
-
 int CLogicOpt::RemoveDeviceFdFromCache(string dev_id)
 {
     redisContext* redis_con = CRedisConnPool::GetInstance()->GetRedisContext();
     CRedisOpt redis_opt;
     redis_opt.SetRedisContext(redis_con);
-    redis_opt.SelectDB(DEVICE);
+    redis_opt.SelectDB(REDIS_DEVICE_INFO);
 
-    redis_opt.Del(dev_id);
+    redis_opt.Hdel(dev_id, REDIS_FIELD_FD);
+
+	CRedisConnPool::GetInstance()->ReleaseRedisContext(redis_con);
+
+    return 0;
+}
+
+int CLogicOpt::SetDeviceAddrCache(string dev_id, string addr)
+{
+    int ret = 0;
+    redisContext* redis_con = CRedisConnPool::GetInstance()->GetRedisContext();
+    CRedisOpt redis_opt;
+    redis_opt.SetRedisContext(redis_con);
+    redis_opt.SelectDB(REDIS_DEVICE_INFO);
+
+    if(!redis_opt.Hset(dev_id, REDIS_FIELD_ADDR, addr))
+    {
+        ret = -ERROR_SET_DEVICE_ADDR_CACHE;
+        goto out;
+    }
+
+out:
+	CRedisConnPool::GetInstance()->ReleaseRedisContext(redis_con);
+
+    return ret;
+}
+
+int CLogicOpt::GetDeviceAddrFromCache(string dev_id, string &addr)
+{
+    int ret = 0;
+    redisContext* redis_con = CRedisConnPool::GetInstance()->GetRedisContext();
+    CRedisOpt redis_opt;
+    redis_opt.SetRedisContext(redis_con);
+    redis_opt.SelectDB(REDIS_DEVICE_INFO);
+
+    if(!redis_opt.Hget(dev_id, REDIS_FIELD_ADDR, addr))
+    {
+        ret = -ERROR_GET_DEVICE_ADDR_FROM_CACHE;
+        goto out;
+    }
+
+out:
+	CRedisConnPool::GetInstance()->ReleaseRedisContext(redis_con);
+
+    return ret;
+}
+
+int CLogicOpt::RemoveDeviceAddrFromCache(string dev_id)
+{
+    redisContext* redis_con = CRedisConnPool::GetInstance()->GetRedisContext();
+    CRedisOpt redis_opt;
+    redis_opt.SetRedisContext(redis_con);
+    redis_opt.SelectDB(REDIS_DEVICE_INFO);
+
+    redis_opt.Hdel(dev_id, REDIS_FIELD_ADDR);
 
 	CRedisConnPool::GetInstance()->ReleaseRedisContext(redis_con);
 

@@ -562,6 +562,7 @@ bool CRedisOpt::Hget(const std::string& key, const std::string& field, std::stri
 	}
 	else if (REDIS_REPLY_NIL == reply_->type)
 	{
+        bret = false;
 		LOG4CXX_WARN(g_logger, "CRedisOpt::Hget_c_c nil. " << key << ":" << field << ":" << value);
 	}
 	else
@@ -813,3 +814,9 @@ error:
 	SafeFreeReplyObject(reply_);
 	return false;
 }
+
+bool CRedisOpt::Hscan(long long cursor, std::vector<std::string> &vec_keys, long long &next_cursor)
+{
+    return Scan(cursor, vec_keys, next_cursor);
+}
+

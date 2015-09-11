@@ -288,7 +288,9 @@ void CWorkerThread::ClientTcpErrorCb(struct bufferevent *bev, short event, void 
 	CMasterThread::map_csfd_id_.erase(sfd);
 
     // remove <dev_id, fd> cache
+    // remove <dev_id, addr> cache
     CLogicOpt::RemoveDeviceFdFromCache(c->dev_id);
+    CLogicOpt::RemoveDeviceAddrFromCache(c->dev_id);
 
     if (c->is_online)
     {

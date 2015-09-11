@@ -18,6 +18,7 @@
 #include "device_alive.h"
 #include "test.h"
 #include "local_transport.h"
+#include "logic_opt.h"
 
 static void InitConfigure();
 static void SettingsAndPrint();
@@ -66,7 +67,7 @@ int main(int argc, char **argv)
 	}
     
     // clear redis data
-    ClearDeviceFdCache();
+    ClearDeviceCache();
 
     // start http client
     int ret = 0;
@@ -77,10 +78,6 @@ int main(int argc, char **argv)
         return -1;
     }
     
-    // start test thread
-    //g_test_thread = new TestThread;
-    //g_test_thread->Create();
-    //
     // start local_transport
     CLocalTransport *local_transport = CLocalTransport::GetInstance();
     local_transport->SetupLocalTransport();
@@ -90,7 +87,7 @@ int main(int argc, char **argv)
 	return EXIT_SUCCESS;
 }
 
-void ClearDeviceFdCache()
+void ClearDeviceCache()
 {
     bool bRet;
     long long cursor = 0;
@@ -100,23 +97,24 @@ void ClearDeviceFdCache()
     redisContext* redis_con = CRedisConnPool::GetInstance()->GetRedisContext();
     CRedisOpt redis_opt;
     redis_opt.SetRedisContext(redis_con);
-    redis_opt.SelectDB(DEVICE);
+    redis_opt.SelectDB(REDIS_DEVICE_INFO);
 
     while (true)
     {
         vector<string> vec_keys;
-        bRet = redis_opt.Scan(cursor, vec_keys, next_cursor);
+        bRet = redis_opt.Hscan(cursor, vec_keys, next_cursor);
         if (!bRet)
         {
-            LOG4CXX_ERROR(g_logger, "redis_opt scan error, cursor " << cursor << ", next_cursor " << next_cursor);
+            LOG4CXX_ERROR(g_logger, "redis_opt hscan error, cursor " << cursor << ", next_cursor " << next_cursor);
             break;
         }
 
         vector<string>::iterator iter = vec_keys.begin();
         for (; iter != vec_keys.end(); iter++)
         {
-            LOG4CXX_ERROR(g_logger, "redis_opt set " << *iter << " -1");
-            redis_opt.Del(*iter);
+            LOG4CXX_ERROR(g_logger, "redis_opt clear " << *iter);
+            CLogicOpt::RemoveDeviceFdFromCache(*iter);
+            CLogicOpt::RemoveDeviceAddrFromCache(*iter);
         }
 
         cursor = next_cursor;

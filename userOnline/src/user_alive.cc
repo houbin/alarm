@@ -87,7 +87,7 @@ void ClearGuidFdCache()
     redisContext* redis_con = CRedisConnPool::GetInstance()->GetRedisContext();
     CRedisOpt redis_opt;
     redis_opt.SetRedisContext(redis_con);
-    redis_opt.SelectDB(CLIENT_USER);
+    redis_opt.SelectDB(REDIS_CLIENT_INFO);
 
     while (true)
     {

@@ -149,7 +149,7 @@ int CLogicOpt::SetGuidFdCache(string guid, int fd)
     redisContext* redis_con = CRedisConnPool::GetInstance()->GetRedisContext();
     CRedisOpt redis_opt;
     redis_opt.SetRedisContext(redis_con);
-    redis_opt.SelectDB(CLIENT_USER);
+    redis_opt.SelectDB(REDIS_CLIENT_INFO);
 
     if(!redis_opt.Set(guid, fd))
     {
@@ -170,7 +170,7 @@ int CLogicOpt::GetGuidFdFromCache(string guid, int &fd)
     redisContext* redis_con = CRedisConnPool::GetInstance()->GetRedisContext();
     CRedisOpt redis_opt;
     redis_opt.SetRedisContext(redis_con);
-    redis_opt.SelectDB(CLIENT_USER);
+    redis_opt.SelectDB(REDIS_CLIENT_INFO);
 
     string fd_str;
     if(!redis_opt.Get(guid, fd_str))
@@ -192,7 +192,7 @@ int CLogicOpt::RemoveGuidFdFromCache(string guid)
     redisContext* redis_con = CRedisConnPool::GetInstance()->GetRedisContext();
     CRedisOpt redis_opt;
     redis_opt.SetRedisContext(redis_con);
-    redis_opt.SelectDB(CLIENT_USER);
+    redis_opt.SelectDB(REDIS_CLIENT_INFO);
 
     redis_opt.Del(guid);
 
