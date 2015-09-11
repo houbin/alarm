@@ -87,7 +87,7 @@ SEND_RESPONSE:
 int CLogicOpt::DeviceLogin()
 {
     int ret = 0;
-    string auth_data;
+    deque<int> auth_data;
 
 	LOG4CXX_TRACE(g_logger, "CLogicOpt::DeviceLogin enter");
 

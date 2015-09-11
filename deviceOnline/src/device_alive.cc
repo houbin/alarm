@@ -189,7 +189,7 @@ void SigUsr(int signo)
 void InitConfigure()
 {
 	CInitConfig initConfObj;
-	initConfObj.SetConfigFilePath(std::string("/etc/networkAlarm/conf/"));
+	initConfObj.SetConfigFilePath(std::string("/etc/jovision/alarm/conf/"));
 	std::string project_name = "deviceOnline";
 	initConfObj.InitLog4cxx(project_name);
 	if (!initConfObj.LoadConfiguration(project_name))

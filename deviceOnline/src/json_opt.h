@@ -12,6 +12,7 @@
 #include "libjson/_internal/Source/JSONNode.h"
 #include "../../public/user_interface_defines.h"
 #include "defines.h"
+#include <deque>
 
 using namespace std;
 
@@ -28,7 +29,7 @@ public:
 
     bool JsonParseCommon();
     int JsonParseBeacon(string &dev_id);
-    int JsonParseLogin(string &dev_id, string &auth_data);
+    int JsonParseLogin(string &dev_id, deque<int> &auth_data);
     int JsonParsePushMsg(string &dev_id);
 
 public:

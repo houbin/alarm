@@ -35,6 +35,7 @@
 #define ERROR_DEVICE_DOUBLE_LOGIN       11018
 #define ERROR_DEVICE_NOT_LOGIN          11019
 #define ERROR_DEVICE_ID_NOT_THE_SAME    11020
+#define ERROR_AUTH_DATA_SIZE            11021
 
 // pc client …œœﬂ¥ÌŒÛ¬Î
 #define ERROR_USER_CONNECT              12000

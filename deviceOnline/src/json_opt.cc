@@ -9,6 +9,9 @@
 #include "json_opt.h"
 #include "../../public/message.h"
 #include "../../public/utils.h"
+#include "../../public/error_code.h"
+
+using namespace std;
 
 CJsonOpt::CJsonOpt()
 {
@@ -83,7 +86,8 @@ int CJsonOpt::JsonParseBeacon(string &dev_id)
     return 0;
 }
 
-int CJsonOpt::JsonParseLogin(string &dev_id, string &auth_data)
+#define AUTH_DATA_SIZE 13
+int CJsonOpt::JsonParseLogin(string &dev_id, deque<int> &auth_data)
 {
     if (!VerifyJsonField(JK_PARAM))
     {
@@ -91,8 +95,23 @@ int CJsonOpt::JsonParseLogin(string &dev_id, string &auth_data)
     }
 
     JSONNode param_node = in_[JK_PARAM].as_node();
-    dev_id = param_node[JK_DEV_ID].as_string();
-    auth_data = param_node[JK_AUTH_DATA].as_string();
+    param_node.preparse();
+
+    JSONNode auth_data_node(JSON_ARRAY);
+    auth_data_node = param_node[JK_AUTH_DATA].as_node();
+
+    int size = auth_data_node.size();
+    if (size != AUTH_DATA_SIZE)
+    {
+        return -ERROR_AUTH_DATA_SIZE;
+    }
+
+    int i = 0;
+    for (; i < size; i++)
+    {
+        int temp = auth_data_node[i].as_int();
+        auth_data.push_back(temp);
+    }
 
     return 0;
 }
