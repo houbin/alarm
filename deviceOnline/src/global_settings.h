@@ -12,6 +12,9 @@
 class CGlobalSettings
 {
 public:
+    std::string public_addr_;
+    std::string private_addr_;
+
 	int remote_listen_port_;
 	unsigned int thread_num_;
 

@@ -817,6 +817,85 @@ error:
 
 bool CRedisOpt::Hscan(long long cursor, std::vector<std::string> &vec_keys, long long &next_cursor)
 {
-    return Scan(cursor, vec_keys, next_cursor);
+    size_t i = 0;
+    int elements = 0;
+    char *end_ptr = NULL;
+    size_t keys_count = 0;
+    redisReply *reply_next_cursor = NULL;
+    redisReply *reply_keys = NULL;
+    redisReply *reply_key = NULL;
+
+	reply_ = (redisReply*) redisCommand(conn_, "hscan %lld", cursor);
+	if (NULL == reply_)
+	{
+		LOG4CXX_ERROR(g_logger, "redisCommand: error = " << conn_->errstr);
+        goto error;
+	}
+
+    if (reply_->type != REDIS_REPLY_ARRAY)
+    {
+		LOG4CXX_ERROR(g_logger, "CRedisOpt::Scan error. cursor = " << cursor << ", errorMessage = " << reply_->str);
+        goto error;
+    }
+
+    elements = reply_->elements;
+    if (elements != 2)
+    {
+	    LOG4CXX_ERROR(g_logger, "CRedisOpt::Scan reply elements error. elements = " << elements);
+        goto error;
+    }
+
+    reply_next_cursor = reply_->element[0];
+    if (!reply_next_cursor)
+    {
+	    LOG4CXX_ERROR(g_logger, "CRedisOpt::Scan get next cursor error. elements = " << elements);
+        goto error;
+    }
+    
+    if (reply_next_cursor->type != REDIS_REPLY_STRING)
+    {
+	    LOG4CXX_ERROR(g_logger, "CRedisOpt::Scan type of next cursor reply error. type %d" << reply_next_cursor->type);
+        goto error;
+    }
+    next_cursor = strtoll(reply_next_cursor->str, &end_ptr, 10);
+
+    reply_keys = reply_->element[1];
+    if (!reply_keys)
+    {
+	    LOG4CXX_ERROR(g_logger, "CRedisOpt::Scan get keys error. elements = " << elements);
+        goto error;
+    }
+
+    if (reply_keys->type != REDIS_REPLY_ARRAY)
+    {
+	    LOG4CXX_ERROR(g_logger, "CRedisOpt::Scan type of keys reply error. type = " << reply_keys->type);
+        goto error;
+    }
+
+    keys_count = reply_keys->elements;
+    for(i = 0; i < keys_count; i++)
+    {
+        reply_key = reply_keys->element[i];
+        if (!reply_key)
+        {
+	        LOG4CXX_ERROR(g_logger, "CRedisOpt::Scan get key error, keys_count " << elements << ", current i of key " << i);
+            goto error;
+        }
+        
+        if (reply_key->type != REDIS_REPLY_STRING)
+        {
+	        LOG4CXX_ERROR(g_logger, "CRedisOpt::Scan get type error, type " << reply_key->type);
+            goto error;
+        }
+
+        vec_keys.push_back(reply_key->str);
+    }
+
+	SafeFreeReplyObject(reply_);
+    return true;
+
+error:
+	SafeFreeReplyObject(reply_);
+	return false;
 }
 

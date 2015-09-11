@@ -54,7 +54,7 @@ void *MsgReplyQueue::Entry()
             if (ret != 0) 
             {
                 LOG4CXX_ERROR(g_logger, "CRedisOpt::GetDeviceFdFromCache error, guid" << reply_msg.guid << ", ret %d" << ret);
-                ret = -ERROR_GET_DEVICE_FD_FROM_CACHE;
+                ret = -ERROR_GET_USER_FD_FROM_CACHE;
                 goto entry_continue;
             }
 

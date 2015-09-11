@@ -205,7 +205,7 @@ void SettingsAndPrint()
 {
 	utils::G<CGlobalSettings>().remote_listen_port_ = utils::G<ConfigFile>().read<int> ("remote.listen.port", 15030);
 	utils::G<CGlobalSettings>().thread_num_= utils::G<ConfigFile>().read<int> ("worker.thread.num", 4);
-	utils::G<CGlobalSettings>().client_heartbeat_timeout_ = utils::G<ConfigFile>().read<int>("client.timeout.s", 70);
+	utils::G<CGlobalSettings>().client_heartbeat_timeout_ = utils::G<ConfigFile>().read<int>("client.heartbeat.timeout", 11);
 	utils::G<CGlobalSettings>().local_listen_port_ = utils::G<ConfigFile>().read<int>("local.listen.port", 15031);
 	utils::G<CGlobalSettings>().local_conn_timeout_ = utils::G<ConfigFile>().read<int>("local.conn.timeout", 5);
 	utils::G<CGlobalSettings>().httpserver_url_ = utils::G<ConfigFile>().read<string>("httpserver.url", "http://172.16.27.219:8081/netalarm-rs/rsapi/userauth/login");

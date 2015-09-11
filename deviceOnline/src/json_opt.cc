@@ -97,6 +97,8 @@ int CJsonOpt::JsonParseLogin(string &dev_id, deque<int> &auth_data)
     JSONNode param_node = in_[JK_PARAM].as_node();
     param_node.preparse();
 
+    dev_id = param_node[JK_DEV_ID].as_string();
+
     JSONNode auth_data_node(JSON_ARRAY);
     auth_data_node = param_node[JK_AUTH_DATA].as_node();
 
@@ -112,6 +114,7 @@ int CJsonOpt::JsonParseLogin(string &dev_id, deque<int> &auth_data)
         int temp = auth_data_node[i].as_int();
         auth_data.push_back(temp);
     }
+
 
     return 0;
 }
@@ -166,11 +169,19 @@ string CJsonOpt::JsonJoinDeviceStateNotice(string dev_id, int state, string time
 
 string CJsonOpt::JsonJoinLoginRes(int ret)
 {
-    JsonJoinCommon(METHOD_ON_DEVICE_LOGIN, ret);
-
     time_t now;
+    struct tm *local_time;
+    char buffer[16] = {0};
+
+    JsonJoinCommon(METHOD_DEVICE_LOGIN, ret);
+
     time(&now);
-    string time_str(ctime(&now));
+    local_time = localtime(&now);
+    sprintf(buffer, "%04d%02d%02d%02d%02d%02d", local_time->tm_year + 1900, local_time->tm_mon + 1, local_time->tm_mday,
+                    local_time->tm_hour, local_time->tm_min, local_time->tm_sec);
+
+
+    string time_str(buffer);
 
     JSONNode result_node;
     result_node.set_name(JK_RESULT);

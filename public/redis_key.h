@@ -12,7 +12,9 @@ enum DB_NUMBER
 };
 
 #define REDIS_FIELD_FD          "fd"
-#define REDIS_FIELD_ADDR        "addr"
+#define REDIS_FIELD_PUBLIC_ADDR        "public_addr"
+#define REDIS_FIELD_PRIVATE_ADDR       "private_addr"
+
 
 static inline std::string int2str(int v)
 {

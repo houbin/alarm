@@ -102,7 +102,7 @@ void ClearDeviceCache()
     while (true)
     {
         vector<string> vec_keys;
-        bRet = redis_opt.Hscan(cursor, vec_keys, next_cursor);
+        bRet = redis_opt.Scan(cursor, vec_keys, next_cursor);
         if (!bRet)
         {
             LOG4CXX_ERROR(g_logger, "redis_opt hscan error, cursor " << cursor << ", next_cursor " << next_cursor);
@@ -113,8 +113,7 @@ void ClearDeviceCache()
         for (; iter != vec_keys.end(); iter++)
         {
             LOG4CXX_ERROR(g_logger, "redis_opt clear " << *iter);
-            CLogicOpt::RemoveDeviceFdFromCache(*iter);
-            CLogicOpt::RemoveDeviceAddrFromCache(*iter);
+            redis_opt.Del(*iter);
         }
 
         cursor = next_cursor;
@@ -212,13 +211,17 @@ void InitRedis()
 
 void SettingsAndPrint()
 {
+	utils::G<CGlobalSettings>().public_addr_ = utils::G<ConfigFile>().read<string> ("public.addr", "127.0.0.1");
+	utils::G<CGlobalSettings>().private_addr_ = utils::G<ConfigFile>().read<string> ("private.addr", "127.0.0.1");
 	utils::G<CGlobalSettings>().remote_listen_port_ = utils::G<ConfigFile>().read<int> ("remote.listen.port", 15030);
 	utils::G<CGlobalSettings>().thread_num_= utils::G<ConfigFile>().read<int> ("worker.thread.num", 4);
-	utils::G<CGlobalSettings>().client_heartbeat_timeout_ = utils::G<ConfigFile>().read<int>("client.timeout.s", 70);
+	utils::G<CGlobalSettings>().client_heartbeat_timeout_ = utils::G<ConfigFile>().read<int>("client.heartbeat.timeout", 11);
 	utils::G<CGlobalSettings>().local_listen_port_ = utils::G<ConfigFile>().read<int>("local.listen.port", 15031);
 	utils::G<CGlobalSettings>().local_conn_timeout_ = utils::G<ConfigFile>().read<int>("local.conn.timeout", 5);
 	utils::G<CGlobalSettings>().httpserver_url_ = utils::G<ConfigFile>().read<string>("httpserver.url", "http://172.16.27.219:8081/netalarm-rs/rsapi/userauth/login");
 
+	LOG4CXX_INFO(g_logger, "******deviceOnline.public.addr = " << utils::G<CGlobalSettings>().public_addr_ << "******");
+	LOG4CXX_INFO(g_logger, "******deviceOnline.private.addr = "  << utils::G<CGlobalSettings>().private_addr_ << "******");
 	LOG4CXX_INFO(g_logger, "******deviceOnline.remote.listen.port = " << utils::G<CGlobalSettings>().remote_listen_port_ << "******");
 	LOG4CXX_INFO(g_logger, "******deviceOnline.worker.thread.num = "  << utils::G<CGlobalSettings>().thread_num_ << "******");
 	LOG4CXX_INFO(g_logger, "******deviceOnline.client.timeout.s = "   << utils::G<CGlobalSettings>().client_heartbeat_timeout_ << "******");
