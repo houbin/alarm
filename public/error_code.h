@@ -45,6 +45,7 @@
 #define ERROR_SET_GUID_FD_CACHE         12001
 #define ERROR_GET_USER_FD_FROM_CACHE    12002
 #define ERROR_SESSION_ID_NOT_EXIST      12003
+#define ERROR_PARSE_MSG                 12004
 
 
 #endif

@@ -739,6 +739,7 @@ enum LogicProcessType
 #define METHOD_DEVICE_STATE_NOTICE      "device_state_notice"
 #define METHOD_DEVICE_LOGIN             "login"
 #define METHOD_ON_DEVICE_LOGIN          "on_login"
+#define METHOD_SET_STREAMSERVER_ADDR    "set_streamserver_addr"
 
 enum ClientType
 {

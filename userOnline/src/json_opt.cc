@@ -96,6 +96,19 @@ int CJsonOpt::JsonParsePushMsg(string &guid)
     return 0;
 }
 
+int CJsonOpt::JsonParseSetStreamServerAddrRes(int &ret)
+{
+    if (!VerifyJsonField(JK_ERROR))
+    {
+        return -1;
+    }
+
+    JSONNode errorcode_node = in_[JK_ERROR].as_node();
+    ret = errorcode_node[JK_ERRORCODE].as_int();
+
+    return 0;
+}
+
 bool CJsonOpt::JsonJoinCommon(string method, int ret)
 {
     out_.push_back(JSONNode(JK_MESSAGE_ID, mid_));

@@ -15,7 +15,7 @@
 #include "../../public/socket_wrapper.h"
 #include "../../public/message.h"
 #include "../../public/error_code.h"
-#include "message_reply_queue.h"
+#include "push_msg_queue.h"
 #include "user_alive.h"
 
 CLogicOpt::CLogicOpt(conn* c)
@@ -57,6 +57,11 @@ void CLogicOpt::StartLogicOpt(const std::string& message)
     if (method == METHOD_KEEP_ONLINE)
     {
         UserBeacon();
+        goto SEND_RESPONSE;
+    }
+    else if (method == METHOD_SET_STREAMSERVER_ADDR)
+    {
+        HandleSetStreamServerAddrRes();
         goto SEND_RESPONSE;
     }
     else
@@ -141,6 +146,28 @@ int CLogicOpt::UserBeacon()
 out:
     responseToClient_ = jsonOpt_ptr_->JsonJoinBeaconRes(ret);
     return ret;
+}
+
+int CLogicOpt::HandleSetStreamServerAddrRes()
+{
+    int ret = 0;
+    int msg_ret;
+    int mid = 0;
+
+	LOG4CXX_TRACE(g_logger, "CLogicOpt::HandleSetStreamServerAddrRes enter");
+
+    mid = jsonOpt_ptr_->GetMid();
+
+    ret = jsonOpt_ptr_->JsonParseSetStreamServerAddrRes(msg_ret);
+    if (ret != 0)
+    {
+        msg_ret = -ERROR_PARSE_MSG;
+	    LOG4CXX_ERROR(g_logger, "CLogicOpt::StartLogicOpt:HandleSetStreamServerAddrRes failed");
+    }
+
+    g_wait_finish_push_msg_queue->FinishPushMsg(mid, msg_ret);
+
+    return 0;
 }
 
 int CLogicOpt::SetGuidFdCache(string guid, int fd)

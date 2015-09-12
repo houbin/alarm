@@ -30,6 +30,9 @@ public:
     int JsonParseBeacon(string &session_id);
     int JsonParsePushMsg(string &guid);
 
+    // 推送消息的回复消息
+    int JsonParseSetStreamServerAddrRes(int &ret);
+
 public:
     bool JsonJoinCommon(string method, int ret = 0);
     string JsonJoinBeaconRes(int ret = 0);
@@ -48,7 +51,7 @@ private:
 	JSONNode in_;
 	JSONNode out_;
 
-	int mid_;
+	unsigned int mid_;
     string method_;
 };
 
