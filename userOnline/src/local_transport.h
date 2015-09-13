@@ -12,15 +12,20 @@
 #include "defines.h"
 #include "context.h"
 #include <boost/thread.hpp>
+#include "atomic.h"
+
+using namespace util;
+
+extern int g_push_msg_mid;
 
 class PushMsgRespContext : public util::Context
 {
 private:
-    int sfd_;
-    int mid_;
+    int recv_sfd_;
+    int recv_mid_;
 
 public:
-    PushMsgRespContext(int sfd, int mid_);
+    PushMsgRespContext(int recv_sfd, int recv_mid);
     ~PushMsgRespContext();
 
     void Finish(int ret);

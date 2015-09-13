@@ -12,11 +12,13 @@
 #include "../../public/utils.h"
 #include "../../public/message.h"
 #include "../../public/socket_wrapper.h"
-#include "message_reply_queue.h"
+#include "push_msg_queue.h"
 #include "device_alive.h"
 
-PushMsgRespContext::PushMsgRespContext(int sfd, int send_cnt)
-    : sfd_(sfd), send_cnt_(send_cnt)
+int g_push_msg_cnt = 0;
+
+PushMsgRespContext::PushMsgRespContext(int recv_sfd, int recv_cnt)
+    : recv_sfd_(recv_sfd), recv_cnt_(recv_cnt)
 {
 
 }
@@ -31,13 +33,13 @@ void PushMsgRespContext::Finish(int ret)
     string push_msg_resp;
     CJsonOpt json_opt;
 
-    push_msg_resp = json_opt.JsonJoinPushMsgRes(send_cnt_, ret);
+    push_msg_resp = json_opt.JsonJoinPushMsgRes(recv_cnt_, ret);
     string response_msg = utils::ReplaceString(push_msg_resp, "\\r\\n", "\\\\r\\\\n");
     response_msg.append("\r\n");
 
-    if (!SocketOperate::WriteSfd(sfd_, response_msg.c_str(), response_msg.size()))
+    if (!SocketOperate::WriteSfd(recv_sfd_, response_msg.c_str(), response_msg.size()))
     {
-        LOG4CXX_ERROR(g_logger, "send push msg reponse error, sfd " << sfd_);
+        LOG4CXX_ERROR(g_logger, "send push msg reponse error, recv_sfd " << recv_sfd_);
     }
 
     return;
@@ -146,27 +148,27 @@ void CLocalTransport::ReadCb(struct bufferevent *bev, void *arg)
 	}
 }
 
-void CLocalTransport::HandleMsg(LOCAL_REV_DATA *ptr_data, string reply_msg_str)
+void CLocalTransport::HandleMsg(LOCAL_REV_DATA *ptr_data, string push_msg_str)
 {
     int ret = 0;
-    int send_cnt = 0;
+    int recv_cnt = 0;
     string dev_id;
     CJsonOpt json_opt;
     string send_msg;
-    ReplyMsg reply_msg;
+    PushMsg push_msg;
     string method;
     PushMsgRespContext *push_msg_resp_ct = NULL;
 
-    int sfd = ptr_data->sfd;
+    int recv_sfd = ptr_data->sfd;
 
-    json_opt.setJsonString(reply_msg_str);
+    json_opt.setJsonString(push_msg_str);
     if(!json_opt.JsonParseCommon())
     {
         LOG4CXX_ERROR(g_logger, "JsonParseCommon error, ret " << ret);
         return;
     }
-
-    send_cnt = json_opt.GetSendCnt();
+    
+    recv_cnt = json_opt.GetSendCnt();
     json_opt.GetMethod(method);
 
     if (method == METHOD_PUSH_MSG)
@@ -179,11 +181,12 @@ void CLocalTransport::HandleMsg(LOCAL_REV_DATA *ptr_data, string reply_msg_str)
         }
 
         // submit to reply msg queue
-        push_msg_resp_ct = new PushMsgRespContext(sfd, send_cnt);
-        reply_msg.dev_id = dev_id;
-        reply_msg.reply_msg = json_opt.JsonJoinPushMsgToDev();
-        reply_msg.ct = push_msg_resp_ct;
-        g_msg_reply_queue->SubmitMsg(reply_msg);
+        push_msg_resp_ct = new PushMsgRespContext(recv_sfd, recv_cnt);
+        push_msg.push_cnt = ++g_push_msg_cnt;
+        push_msg.dev_id = dev_id;
+        push_msg.push_msg= json_opt.JsonJoinPushMsgToDev(push_msg.push_cnt);
+        push_msg.ct = push_msg_resp_ct;
+        g_push_msg_queue->SubmitMsg(push_msg);
     }
     else
     {
@@ -195,12 +198,12 @@ void CLocalTransport::HandleMsg(LOCAL_REV_DATA *ptr_data, string reply_msg_str)
 
 error:
     // ×ªÒå\r\nÎª\\r\\n
-    string push_msg_resp = json_opt.JsonJoinPushMsgRes(send_cnt, ret);
+    string push_msg_resp = json_opt.JsonJoinPushMsgRes(recv_cnt, ret);
     string response_msg = utils::ReplaceString(push_msg_resp, "\\r\\n", "\\\\r\\\\n");
     response_msg.append("\r\n");
-    if (!SocketOperate::WriteSfd(sfd, response_msg.c_str(), response_msg.length()))
+    if (!SocketOperate::WriteSfd(recv_sfd, response_msg.c_str(), response_msg.length()))
     {
-        LOG4CXX_ERROR(g_logger, "SocketOperate::WriteSfd error, fd " << sfd << ", reply_msg " << response_msg);
+        LOG4CXX_ERROR(g_logger, "SocketOperate::WriteSfd error, recv_fd " << recv_sfd << ", push_msg " << response_msg);
     }
 
     return;

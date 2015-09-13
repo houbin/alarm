@@ -36,7 +36,6 @@ void CLogicOpt::StartLogicOpt(const std::string& message)
     int ret = 0;
 	std::string custom_msg;
     string method;
-    ReplyMsg reply_msg;
 
 	LOG4CXX_INFO(g_logger, "CLogicOperate::StartLogicOpt" << message);
 
@@ -64,6 +63,11 @@ void CLogicOpt::StartLogicOpt(const std::string& message)
         DeviceBeacon();
         goto SEND_RESPONSE;
     }
+    else if (method == METHOD_ON_PUSH_MSG)
+    {
+        HandlePushMsgResp();
+        goto SEND_RESPONSE;
+    }
     else
     {
 		LOG4CXX_ERROR(g_logger, "CLogicOpt::StartLogicOpt method invalid");
@@ -71,13 +75,11 @@ void CLogicOpt::StartLogicOpt(const std::string& message)
     }
 
 SEND_RESPONSE:
-
-    // 转义\r\n为\\r\\n
     string response_msg = utils::ReplaceString(responseToClient_, "\\r\\n", "\\\\r\\\\n");
     response_msg.append("\r\n");
     if (!SocketOperate::WriteSfd(conn_->sfd, response_msg.c_str(), response_msg.length()))
     {
-        LOG4CXX_ERROR(g_logger, "SocketOperate::WriteSfd error, fd " << conn_->sfd << ", reply_msg " << responseToClient_);
+        LOG4CXX_ERROR(g_logger, "SocketOperate::WriteSfd error, fd " << conn_->sfd << ", push_msg " << responseToClient_);
         ret = -ERROR_PUSH_MESSAGE;
     }
 
@@ -181,6 +183,28 @@ int CLogicOpt::DeviceBeacon()
 out:
     responseToClient_ = jsonOpt_ptr_->JsonJoinBeaconRes(ret);
     return ret;
+}
+
+int CLogicOpt::HandlePushMsgResp()
+{
+    int ret = 0;
+    int msg_ret;
+    int push_cnt = 0;
+
+	LOG4CXX_TRACE(g_logger, "CLogicOpt::HandlePushMsgResp enter");
+
+    push_cnt = jsonOpt_ptr_->GetSendCnt();
+
+    ret = jsonOpt_ptr_->JsonParsePushMsgResp(msg_ret);
+    if (ret != 0)
+    {
+        msg_ret = -ERROR_PARSE_MSG;
+	    LOG4CXX_ERROR(g_logger, "CLogicOpt::StartLogicOpt:HandlePushMsgResp failed");
+    }
+
+    g_wait_finish_push_msg_queue.FinishPushMsg(push_cnt, msg_ret);
+
+    return 0;
 }
 
 int CLogicOpt::SetDeviceFdCache(string dev_id, int fd)

@@ -96,7 +96,7 @@ int CJsonOpt::JsonParsePushMsg(string &guid)
     return 0;
 }
 
-int CJsonOpt::JsonParseSetStreamServerAddrRes(int &ret)
+int CJsonOpt::JsonParsePushMsgResp(int &ret)
 {
     if (!VerifyJsonField(JK_ERROR))
     {
@@ -125,8 +125,9 @@ string CJsonOpt::JsonJoinBeaconRes(int ret)
     return out_.write();
 }
 
-string CJsonOpt::JsonJoinPushMsgToClient()
+string CJsonOpt::JsonJoinPushMsgToClient(int push_mid)
 {
+    out_.push_back(JSONNode(JK_MESSAGE_ID, push_mid));
     return out_.write();
 }
 

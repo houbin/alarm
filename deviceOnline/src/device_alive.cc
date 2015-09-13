@@ -26,7 +26,7 @@ static void InitRedis();
 static void Run();
 static void SigUsr(int signo);
 
-MsgReplyQueue *g_msg_reply_queue = NULL;
+PushMsgQueue *g_push_msg_queue = NULL;
 HttpClient *g_http_client = NULL;
 
 TestThread *g_test_thread = NULL;
@@ -157,9 +157,9 @@ int StartHttpClient()
 
 void Run()
 {
-    // start message reply queue
-    g_msg_reply_queue = new MsgReplyQueue();
-    g_msg_reply_queue->Start();
+    // start push message queue
+    g_push_msg_queue = new PushMsgQueue();
+    g_push_msg_queue->Start();
 
 	CMasterThread masterThread;
 	if(!masterThread.InitMasterThread())

@@ -16,11 +16,11 @@
 class PushMsgRespContext : public util::Context
 {
 private:
-    int sfd_;
-    int send_cnt_;
+    int recv_sfd_;
+    int recv_cnt_;
 
 public:
-    PushMsgRespContext(int sfd, int send_cnt);
+    PushMsgRespContext(int recv_sfd, int recv_cnt);
     ~PushMsgRespContext();
 
     void Finish(int ret);

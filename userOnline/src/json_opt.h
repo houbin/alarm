@@ -31,13 +31,13 @@ public:
     int JsonParsePushMsg(string &guid);
 
     // 推送消息的回复消息
-    int JsonParseSetStreamServerAddrRes(int &ret);
+    int JsonParsePushMsgResp(int &ret);
 
 public:
     bool JsonJoinCommon(string method, int ret = 0);
     string JsonJoinBeaconRes(int ret = 0);
 
-    string JsonJoinPushMsgToClient();
+    string JsonJoinPushMsgToClient(int push_mid);
     string JsonJoinPushMsgRes(int mid, int result);
 
     //for test

@@ -36,6 +36,7 @@ private:
 
     int DeviceLogin();
 	int DeviceBeacon();
+    int HandlePushMsgResp();
 
 private:
 

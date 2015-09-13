@@ -33,7 +33,7 @@ public:
 private:
 
 	int UserBeacon();
-    int HandleSetStreamServerAddrRes();
+    int HandlePushMsgResp();
 
 private:
 

@@ -36,7 +36,6 @@ void CLogicOpt::StartLogicOpt(const std::string& message)
     int ret = 0;
 	std::string custom_msg;
     string method;
-    ReplyMsg reply_msg;
 
 	LOG4CXX_INFO(g_logger, "CLogicOperate::StartLogicOpt" << message);
 
@@ -59,9 +58,9 @@ void CLogicOpt::StartLogicOpt(const std::string& message)
         UserBeacon();
         goto SEND_RESPONSE;
     }
-    else if (method == METHOD_SET_STREAMSERVER_ADDR)
+    else if (method == METHOD_ON_PUSH_MSG)
     {
-        HandleSetStreamServerAddrRes();
+        HandlePushMsgResp();
         goto SEND_RESPONSE;
     }
     else
@@ -148,24 +147,24 @@ out:
     return ret;
 }
 
-int CLogicOpt::HandleSetStreamServerAddrRes()
+int CLogicOpt::HandlePushMsgResp()
 {
     int ret = 0;
     int msg_ret;
-    int mid = 0;
+    int push_mid = 0;
 
-	LOG4CXX_TRACE(g_logger, "CLogicOpt::HandleSetStreamServerAddrRes enter");
+	LOG4CXX_TRACE(g_logger, "CLogicOpt::HandlePushMsgResp enter");
 
-    mid = jsonOpt_ptr_->GetMid();
+    push_mid = jsonOpt_ptr_->GetMid();
 
-    ret = jsonOpt_ptr_->JsonParseSetStreamServerAddrRes(msg_ret);
+    ret = jsonOpt_ptr_->JsonParsePushMsgResp(msg_ret);
     if (ret != 0)
     {
         msg_ret = -ERROR_PARSE_MSG;
-	    LOG4CXX_ERROR(g_logger, "CLogicOpt::StartLogicOpt:HandleSetStreamServerAddrRes failed");
+	    LOG4CXX_ERROR(g_logger, "CLogicOpt::StartLogicOpt:HandlePushMsgResp failed");
     }
 
-    g_wait_finish_push_msg_queue->FinishPushMsg(mid, msg_ret);
+    g_wait_finish_push_msg_queue.FinishPushMsg(push_mid, msg_ret);
 
     return 0;
 }

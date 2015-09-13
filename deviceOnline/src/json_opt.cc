@@ -132,6 +132,19 @@ int CJsonOpt::JsonParsePushMsg(string &dev_id)
     return 0;
 }
 
+int CJsonOpt::JsonParsePushMsgResp(int &ret)
+{
+    if (!VerifyJsonField(JK_ERROR))
+    {
+        return -1;
+    }
+
+    JSONNode errorcode_node = in_[JK_ERROR].as_node();
+    ret = errorcode_node[JK_ERRORCODE].as_int();
+
+    return 0;
+}
+
 bool CJsonOpt::JsonJoinCommon(string method, int ret)
 {
     out_.push_back(JSONNode(JK_SEND_CNT, send_cnt_));
@@ -192,8 +205,9 @@ string CJsonOpt::JsonJoinLoginRes(int ret)
     return out_.write();
 }
 
-string CJsonOpt::JsonJoinPushMsgToDev()
+string CJsonOpt::JsonJoinPushMsgToDev(int push_cnt)
 {
+    out_.push_back(JSONNode(JK_SEND_CNT, push_cnt));
     return out_.write();
 }
 

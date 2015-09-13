@@ -14,7 +14,6 @@
 #include "global_settings.h"
 #include "../../public/utils.h"
 #include "../../public/config_file.h"
-#include "message_reply_queue.h"
 #include "redis_opt.h"
 #include "user_alive.h"
 #include "local_transport.h"
@@ -25,7 +24,7 @@ static void InitRedis();
 static void Run();
 static void SigUsr(int signo);
 
-MsgReplyQueue *g_msg_reply_queue = NULL;
+PushMsgQueue *g_msg_push_queue = NULL;
 //HttpClient *g_http_client = NULL;
 
 //TestThread *g_test_thread = NULL;
@@ -150,8 +149,8 @@ int StartHttpClient()
 void Run()
 {
     // start message reply queue
-    g_msg_reply_queue = new MsgReplyQueue();
-    g_msg_reply_queue->Start();
+    g_msg_push_queue = new PushMsgQueue();
+    g_msg_push_queue->Start();
 
 	CMasterThread masterThread;
 	if(!masterThread.InitMasterThread())

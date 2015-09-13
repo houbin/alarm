@@ -32,13 +32,16 @@ public:
     int JsonParseLogin(string &dev_id, deque<int> &auth_data);
     int JsonParsePushMsg(string &dev_id);
 
+    // 推送消息的回复消息
+    int JsonParsePushMsgResp(int &ret);
+
 public:
     bool JsonJoinCommon(string method, int ret = 0);
     string JsonJoinBeaconRes(int ret = 0);
     string JsonJoinDeviceStateNotice(string dev_id, int state, string time);
     string JsonJoinLoginRes(int ret = 0);
 
-    string JsonJoinPushMsgToDev();
+    string JsonJoinPushMsgToDev(int push_cnt);
     string JsonJoinPushMsgRes(int send_cnt, int result = 0);
 
     //for test
