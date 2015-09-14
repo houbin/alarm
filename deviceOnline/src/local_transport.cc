@@ -28,12 +28,19 @@ PushMsgRespContext::~PushMsgRespContext()
 
 }
 
+int PushMsgRespContext::SetParamNode(JSONNode &param_node)
+{
+    param_node_ = param_node.duplicate();
+
+    return 0;
+}
+
 void PushMsgRespContext::Finish(int ret)
 {
     string push_msg_resp;
     CJsonOpt json_opt;
 
-    push_msg_resp = json_opt.JsonJoinPushMsgRes(recv_cnt_, ret);
+    push_msg_resp = json_opt.JsonJoinPushMsgResToHttpServer(recv_cnt_, ret, param_node_);
     string response_msg = utils::ReplaceString(push_msg_resp, "\\r\\n", "\\\\r\\\\n");
     response_msg.append("\r\n");
 
@@ -197,8 +204,8 @@ void CLocalTransport::HandleMsg(LOCAL_REV_DATA *ptr_data, string push_msg_str)
     return;
 
 error:
-    // ×ªÒå\r\nÎª\\r\\n
-    string push_msg_resp = json_opt.JsonJoinPushMsgRes(recv_cnt, ret);
+    JSONNode param_node;
+    string push_msg_resp = json_opt.JsonJoinPushMsgResToHttpServer(recv_cnt, ret, param_node);
     string response_msg = utils::ReplaceString(push_msg_resp, "\\r\\n", "\\\\r\\\\n");
     response_msg.append("\r\n");
     if (!SocketOperate::WriteSfd(recv_sfd, response_msg.c_str(), response_msg.length()))

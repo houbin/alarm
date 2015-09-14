@@ -63,7 +63,7 @@ void CLogicOpt::StartLogicOpt(const std::string& message)
         DeviceBeacon();
         goto SEND_RESPONSE;
     }
-    else if (method == METHOD_ON_PUSH_MSG)
+    else if (method == METHOD_SET_STREAMSERVER_ADDR)
     {
         HandlePushMsgResp();
         goto SEND_RESPONSE;
@@ -190,19 +190,21 @@ int CLogicOpt::HandlePushMsgResp()
     int ret = 0;
     int msg_ret;
     int push_cnt = 0;
-
-	LOG4CXX_TRACE(g_logger, "CLogicOpt::HandlePushMsgResp enter");
+    string method;
 
     push_cnt = jsonOpt_ptr_->GetSendCnt();
+    jsonOpt_ptr_->GetMethod(method);
+    LOG4CXX_TRACE(g_logger, "handle push msg resp, method is " << method << ", push_cnt is " << push_cnt);
 
-    ret = jsonOpt_ptr_->JsonParsePushMsgResp(msg_ret);
+    JSONNode param_node;
+    ret = jsonOpt_ptr_->JsonParsePushMsgResp(msg_ret, param_node);
     if (ret != 0)
     {
         msg_ret = -ERROR_PARSE_MSG;
 	    LOG4CXX_ERROR(g_logger, "CLogicOpt::StartLogicOpt:HandlePushMsgResp failed");
     }
 
-    g_wait_finish_push_msg_queue.FinishPushMsg(push_cnt, msg_ret);
+    g_wait_finish_push_msg_queue.FinishPushMsg(push_cnt, msg_ret, param_node);
 
     return 0;
 }

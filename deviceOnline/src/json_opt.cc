@@ -30,6 +30,11 @@ void CJsonOpt::setJsonString(const std::string &msg)
 
 int CJsonOpt::GetMethod(string &method)
 {
+    if (method_ == "")
+    {
+        return -1;
+    }
+
     method = method_;
     return 0;
 }
@@ -132,7 +137,7 @@ int CJsonOpt::JsonParsePushMsg(string &dev_id)
     return 0;
 }
 
-int CJsonOpt::JsonParsePushMsgResp(int &ret)
+int CJsonOpt::JsonParsePushMsgResp(int &ret, JSONNode &param_node)
 {
     if (!VerifyJsonField(JK_ERROR))
     {
@@ -141,6 +146,11 @@ int CJsonOpt::JsonParsePushMsgResp(int &ret)
 
     JSONNode errorcode_node = in_[JK_ERROR].as_node();
     ret = errorcode_node[JK_ERRORCODE].as_int();
+
+    param_node = in_.duplicate();
+    param_node.pop_back(JK_SEND_CNT);
+    param_node.pop_back(JK_METHOD);
+    param_node.pop_back(JK_ERROR);
 
     return 0;
 }
@@ -211,11 +221,19 @@ string CJsonOpt::JsonJoinPushMsgToDev(int push_cnt)
     return out_.write();
 }
 
-string CJsonOpt::JsonJoinPushMsgRes(int send_cnt, int result)
+string CJsonOpt::JsonJoinPushMsgResToHttpServer(int send_cnt, int result, JSONNode &param_node)
 {
     out_.push_back(JSONNode(JK_SEND_CNT, send_cnt));
     out_.push_back(JSONNode(JK_METHOD, METHOD_ON_PUSH_MSG));
     out_.push_back(JSONNode(JK_RESULT, result));
+    if (!param_node.empty())
+    {
+        JSONNode param;
+        param.set_name("param");
+        param.push_back(param_node);
+
+        out_.push_back(param);
+    }
 
     return out_.write();
 }

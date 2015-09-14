@@ -33,7 +33,7 @@ public:
     int JsonParsePushMsg(string &dev_id);
 
     // 推送消息的回复消息
-    int JsonParsePushMsgResp(int &ret);
+    int JsonParsePushMsgResp(int &ret, JSONNode &param_node);
 
 public:
     bool JsonJoinCommon(string method, int ret = 0);
@@ -42,7 +42,7 @@ public:
     string JsonJoinLoginRes(int ret = 0);
 
     string JsonJoinPushMsgToDev(int push_cnt);
-    string JsonJoinPushMsgRes(int send_cnt, int result = 0);
+    string JsonJoinPushMsgResToHttpServer(int send_cnt, int result, JSONNode &param_node);
 
     //for test
     string JsonJoinUserLogin();

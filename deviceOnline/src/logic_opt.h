@@ -12,6 +12,7 @@
 #include "redis_opt.h"
 #include "../../public/message.h"
 #include "../../public/user_interface_defines.h"
+#include "libjson/_internal/Source/JSONNode.h"
 
 class CJsonOpt;
 class CRedisOpt;
@@ -36,6 +37,7 @@ private:
 
     int DeviceLogin();
 	int DeviceBeacon();
+    int HandleSetStreamServerResp();
     int HandlePushMsgResp();
 
 private:

@@ -12,6 +12,7 @@
 #include "defines.h"
 #include "context.h"
 #include <boost/thread.hpp>
+#include "libjson/_internal/Source/JSONNode.h"
 
 class PushMsgRespContext : public util::Context
 {
@@ -19,10 +20,13 @@ private:
     int recv_sfd_;
     int recv_cnt_;
 
+    JSONNode param_node_;
+
 public:
     PushMsgRespContext(int recv_sfd, int recv_cnt);
     ~PushMsgRespContext();
 
+    int SetParamNode(JSONNode &param_node);
     void Finish(int ret);
 };
 

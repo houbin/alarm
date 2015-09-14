@@ -58,15 +58,10 @@ void CLogicOpt::StartLogicOpt(const std::string& message)
         UserBeacon();
         goto SEND_RESPONSE;
     }
-    else if (method == METHOD_ON_PUSH_MSG)
+    else
     {
         HandlePushMsgResp();
         goto SEND_RESPONSE;
-    }
-    else
-    {
-		LOG4CXX_ERROR(g_logger, "CLogicOpt::StartLogicOpt method invalid");
-        return;
     }
 
 SEND_RESPONSE:
