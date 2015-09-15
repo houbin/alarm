@@ -140,3 +140,16 @@ string CJsonOpt::JsonJoinPushMsgRes(int mid, int result)
     return out_.write();
 }
 
+string CJsonOpt::JsonJoinUserLogout(int mid, string session_id)
+{
+    out_.push_back(JSONNode(JK_MESSAGE_ID, mid));
+    out_.push_back(JSONNode(JK_METHOD, METHOD_LOGOUT));
+
+    JSONNode param_node;
+    param_node.set_name("JK_PARAM");
+    param_node.push_back(JSONNode(JK_SESSION, session_id));
+    out_.push_back(param_node);
+
+    return out_.write();
+}
+

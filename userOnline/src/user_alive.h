@@ -2,12 +2,12 @@
 #define DEVICE_ALIVE_H_
 
 #include "push_msg_queue.h"
-//#include "http_client.h"
+#include "http_client.h"
 
 extern PushMsgQueue *g_msg_push_queue;
-//extern HttpClient *g_http_client;
+extern HttpClient *g_http_client;
 
 extern void ClearGuidFdCache();
-//extern int StartHttpClient();
+extern int StartHttpClient();
 
 #endif

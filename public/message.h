@@ -740,6 +740,10 @@ enum LogicProcessType
 #define METHOD_DEVICE_LOGIN             "login"
 #define METHOD_ON_DEVICE_LOGIN          "on_login"
 #define METHOD_SET_STREAMSERVER_ADDR    "set_streamserver_addr"
+#define METHOD_GET_DEV_IP               "get_dev_ip"
+#define METHOD_ON_GET_DEV_IP            "on_get_dev_ip"
+#define METHOD_LOGOUT                   "logout"
+#define METHOD_ON_LOGOUT                "on_logout"
 
 enum ClientType
 {

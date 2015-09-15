@@ -28,8 +28,8 @@ public:
     static int GetDeviceFdFromCache(std::string dev_id, int &fd);
     static int RemoveDeviceFdFromCache(std::string dev_id);
 
-    static int SetDeviceAddrCache(std::string dev_id, std::string public_addr, std::string private_addr);
-    static int GetDeviceAddrFromCache(std::string dev_id, std::string &public_addr, std::string &private_addr);
+    static int SetDeviceAddrCache(std::string dev_id, std::string public_addr, std::string private_addr, std::string dev_ip);
+    static int GetDeviceAddrFromCache(std::string dev_id, std::string &public_addr, std::string &private_addr, std::string &dev_ip);
     static int RemoveDeviceAddrFromCache(std::string dev_id);
 
     static int RemoveDeviceFromCache(std::string dev_id);

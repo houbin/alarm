@@ -5,6 +5,7 @@
  *      Author: yaowei
  */
 
+#include <sys/socket.h>
 #include "logic_opt.h"
 #include "defines.h"
 #include "json_opt.h"
@@ -114,6 +115,19 @@ int CLogicOpt::DeviceLogin()
         conn_->is_login = true;
         conn_->dev_id = dev_id_;
 
+        // 获取上线设备的ip
+        struct sockaddr_in dev_addr;
+        socklen_t len;
+        memset(&dev_addr, 0, sizeof(struct sockaddr));
+        ret = getpeername(conn_->sfd, (struct sockaddr*)&dev_addr, &len);
+        if (ret != 0)
+        {
+	        LOG4CXX_ERROR(g_logger, "DeviceBeacon getpeername failed, errno is " << -errno);
+            ret = -errno;
+            goto out;
+        }
+        string dev_ip(inet_ntoa(dev_addr.sin_addr));
+
         // 更新设备在redis中的信息
         ret = CLogicOpt::SetDeviceFdCache(conn_->dev_id, conn_->sfd);
         if (ret != 0)
@@ -123,7 +137,7 @@ int CLogicOpt::DeviceLogin()
             goto out;
         }
 
-        ret = CLogicOpt::SetDeviceAddrCache(conn_->dev_id, utils::G<CGlobalSettings>().public_addr_, utils::G<CGlobalSettings>().private_addr_);
+        ret = CLogicOpt::SetDeviceAddrCache(conn_->dev_id, utils::G<CGlobalSettings>().public_addr_, utils::G<CGlobalSettings>().private_addr_, dev_ip);
         if (ret != 0)
         {
 	        LOG4CXX_ERROR(g_logger, "DeviceBeacon getsockname error");
@@ -265,7 +279,7 @@ int CLogicOpt::RemoveDeviceFdFromCache(string dev_id)
     return 0;
 }
 
-int CLogicOpt::SetDeviceAddrCache(string dev_id, string public_addr, string private_addr)
+int CLogicOpt::SetDeviceAddrCache(string dev_id, string public_addr, string private_addr, string dev_ip)
 {
     int ret = 0;
     redisContext* redis_con = CRedisConnPool::GetInstance()->GetRedisContext();
@@ -286,13 +300,21 @@ int CLogicOpt::SetDeviceAddrCache(string dev_id, string public_addr, string priv
         goto out;
     }
 
+    if (!redis_opt.Hset(dev_id, REDIS_FIELD_DEV_IP, dev_ip))
+    {
+        redis_opt.Hdel(dev_id, REDIS_FIELD_PUBLIC_ADDR);
+        redis_opt.Hdel(dev_id, REDIS_FIELD_PRIVATE_ADDR);
+        ret = -ERROR_SET_DEVICE_ADDR_CACHE;
+        goto out;
+    }
+
 out:
 	CRedisConnPool::GetInstance()->ReleaseRedisContext(redis_con);
 
     return ret;
 }
 
-int CLogicOpt::GetDeviceAddrFromCache(string dev_id, string &public_addr, string &private_addr)
+int CLogicOpt::GetDeviceAddrFromCache(string dev_id, string &public_addr, string &private_addr, string &dev_ip)
 {
     int ret = 0;
     redisContext* redis_con = CRedisConnPool::GetInstance()->GetRedisContext();
@@ -307,6 +329,12 @@ int CLogicOpt::GetDeviceAddrFromCache(string dev_id, string &public_addr, string
     }
 
     if(!redis_opt.Hget(dev_id, REDIS_FIELD_PRIVATE_ADDR, private_addr))
+    {
+        ret = -ERROR_GET_DEVICE_ADDR_FROM_CACHE;
+        goto out;
+    }
+
+    if(!redis_opt.Hget(dev_id, REDIS_FIELD_DEV_IP, dev_ip))
     {
         ret = -ERROR_GET_DEVICE_ADDR_FROM_CACHE;
         goto out;
@@ -327,6 +355,7 @@ int CLogicOpt::RemoveDeviceAddrFromCache(string dev_id)
 
     redis_opt.Hdel(dev_id, REDIS_FIELD_PUBLIC_ADDR);
     redis_opt.Hdel(dev_id, REDIS_FIELD_PRIVATE_ADDR);
+    redis_opt.Hdel(dev_id, REDIS_FIELD_DEV_IP);
 
 	CRedisConnPool::GetInstance()->ReleaseRedisContext(redis_con);
 

@@ -25,7 +25,7 @@ static void Run();
 static void SigUsr(int signo);
 
 PushMsgQueue *g_msg_push_queue = NULL;
-//HttpClient *g_http_client = NULL;
+HttpClient *g_http_client = NULL;
 
 //TestThread *g_test_thread = NULL;
 
@@ -66,6 +66,15 @@ int main(int argc, char **argv)
     
     // clear redis data
     ClearGuidFdCache();
+
+    // start http client
+    int ret = 0;
+    ret = StartHttpClient();
+    if (ret != 0)
+    {
+        LOG4CXX_ERROR(g_logger, "start http client error, ret is " << ret);
+        return -1;
+    }
 
     // start local transport
     CLocalTransport *local_transport = CLocalTransport::GetInstance();
@@ -120,7 +129,6 @@ void ClearGuidFdCache()
     return;
 }
 
-#if 0
 int StartHttpClient()
 {
     int ret = 0;
@@ -144,7 +152,6 @@ int StartHttpClient()
 
     return 0;
 }
-#endif
 
 void Run()
 {
@@ -207,7 +214,7 @@ void SettingsAndPrint()
 	utils::G<CGlobalSettings>().client_heartbeat_timeout_ = utils::G<ConfigFile>().read<int>("client.heartbeat.timeout", 11);
 	utils::G<CGlobalSettings>().local_listen_port_ = utils::G<ConfigFile>().read<int>("local.listen.port", 15031);
 	utils::G<CGlobalSettings>().local_conn_timeout_ = utils::G<ConfigFile>().read<int>("local.conn.timeout", 5);
-	utils::G<CGlobalSettings>().httpserver_url_ = utils::G<ConfigFile>().read<string>("httpserver.url", "http://172.16.27.219:8081/netalarm-rs/rsapi/userauth/login");
+	utils::G<CGlobalSettings>().httpserver_url_ = utils::G<ConfigFile>().read<string>("httpserver.url", "http://127.0.0.1:8081/netalarm-rs/rsapi/userauth/logout");
 
 	LOG4CXX_INFO(g_logger, "******userOnline.remote.listen.port = " << utils::G<CGlobalSettings>().remote_listen_port_ << "******");
 	LOG4CXX_INFO(g_logger, "******userOnline.worker.thread.num = "  << utils::G<CGlobalSettings>().thread_num_ << "******");

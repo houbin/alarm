@@ -13,7 +13,9 @@
 #include "../../public/utils.h"
 #include "../../public/user_interface_defines.h"
 #include "../../public/message.h"
+#include "http_client.h"
 #include "json_opt.h"
+#include "user_alive.h"
 
 #define ITEMS_PER_ALLOC 64
 
@@ -282,10 +284,22 @@ void CWorkerThread::ClientTcpErrorCb(struct bufferevent *bev, short event, void 
                 			    << ", guid = " << c->guid);
 	}
 
+
 	CMasterThread::map_csfd_id_.erase(sfd);
 
-    // invalid <username, fd> cache
-    CLogicOpt::RemoveGuidFdFromCache(c->guid);
+    if (c->is_online)
+    {
+        // 清理redis数据
+        CLogicOpt::RemoveGuidFdFromCache(c->guid);
+
+        // 通知用户心跳异常
+        CJsonOpt json_opt;
+        int mid = g_http_client_mid++;
+        string msg_info = json_opt.JsonJoinUserLogout(mid, c->guid);
+        SendMsg send_msg(msg_info);
+        g_http_client->SubmitMsg(send_msg);
+    }
+
 
     // 清理工作
     c->is_online = false;

@@ -40,6 +40,9 @@ public:
     string JsonJoinPushMsgToClient(int push_mid);
     string JsonJoinPushMsgRes(int mid, int result);
 
+
+    string JsonJoinUserLogout(int mid, string session);
+
     //for test
     //string JsonJoinUserLogin();
 
