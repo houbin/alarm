@@ -150,7 +150,8 @@ int CLogicOpt::DeviceLogin()
         string time_info(ctime(&now));
         CJsonOpt json_opt;
         string msg_info = json_opt.JsonJoinDeviceStateNotice(conn_->dev_id, 1, time_info);
-        SendMsg send_msg(msg_info);
+        string url = utils::G<CGlobalSettings>().httpserver_url_;
+        SendMsg send_msg(url, msg_info);
         g_http_client->SubmitMsg(send_msg);
 
 	    LOG4CXX_TRACE(g_logger, "DeviceBeacon ok, dev_id is " << conn_->dev_id << ", sfd is " << conn_->sfd);

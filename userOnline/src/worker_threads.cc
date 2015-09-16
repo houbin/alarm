@@ -13,7 +13,7 @@
 #include "../../public/utils.h"
 #include "../../public/user_interface_defines.h"
 #include "../../public/message.h"
-#include "http_client.h"
+#include "../../util/http_client.h"
 #include "json_opt.h"
 #include "user_alive.h"
 
@@ -296,7 +296,8 @@ void CWorkerThread::ClientTcpErrorCb(struct bufferevent *bev, short event, void 
         CJsonOpt json_opt;
         int mid = g_http_client_mid++;
         string msg_info = json_opt.JsonJoinUserLogout(mid, c->guid);
-        SendMsg send_msg(msg_info);
+        string url = utils::G<CGlobalSettings>().httpserver_url_;
+        SendMsg send_msg(url, msg_info);
         g_http_client->SubmitMsg(send_msg);
     }
 

@@ -4,6 +4,9 @@
 #include "json_opt.h"
 #include "test.h"
 #include "defines.h"
+#include "../../public/utils.h"
+#include "global_settings.h"
+
 
 void *TestThread::Entry()
 {
@@ -12,7 +15,8 @@ void *TestThread::Entry()
     {
         CJsonOpt json_opt;
         string msg_info = json_opt.JsonJoinUserLogin();
-        SendMsg send_msg(msg_info);
+        string url = utils::G<CGlobalSettings>().httpserver_url_;
+        SendMsg send_msg(url, msg_info);
         g_http_client->SubmitMsg(send_msg);
         sleep(5);
     }

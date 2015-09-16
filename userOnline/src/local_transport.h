@@ -12,7 +12,6 @@
 #include "defines.h"
 #include "context.h"
 #include <boost/thread.hpp>
-#include "atomic.h"
 
 using namespace util;
 

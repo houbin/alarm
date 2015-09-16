@@ -135,9 +135,7 @@ int StartHttpClient()
 {
     int ret = 0;
 
-    string url = utils::G<CGlobalSettings>().httpserver_url_;
-
-    g_http_client = new HttpClient(url);
+    g_http_client = new HttpClient();
     if (g_http_client == NULL)
     {
         return -1;

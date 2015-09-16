@@ -2,6 +2,8 @@
 #include "defines.h"
 #include "../../public/error_code.h"
 
+int g_http_client_mid = 0;
+
 void http_request_done(struct evhttp_request *req, void *arg)
 {
     LOG4CXX_INFO(g_logger, "receive http response");
@@ -30,9 +32,9 @@ void http_request_done(struct evhttp_request *req, void *arg)
     return;
 }
 
-HttpClient::HttpClient(string url) : mutex_("HttpClient"), stop_(false), url_(url), host_(NULL), port_(-1), base_(NULL)
+HttpClient::HttpClient() : mutex_("HttpClient"), stop_(false), base_(NULL)
 { 
-    memset(uri_, 0, 256);
+
 }
 
 HttpClient::~HttpClient()
@@ -55,62 +57,6 @@ int HttpClient::SubmitMsg(SendMsg send_msg)
 
 int HttpClient::Init()
 {
-    const char *scheme = NULL;
-    const char *path = NULL;
-    const char *query = NULL;
-    struct evhttp_uri *http_uri = NULL;
-
-    http_uri = evhttp_uri_parse(url_.c_str());
-    if (http_uri == NULL)
-    {
-        LOG4CXX_ERROR(g_logger, "evhttp_uri_parse error, url is " << url_);
-        return -ERROR_HTTP_PARSE_URL;
-    }
-
-    scheme = evhttp_uri_get_scheme(http_uri);
-    if (scheme == NULL)
-    {
-        LOG4CXX_ERROR(g_logger, "evhttp_uri_get_scheme error, url is " << url_);
-        return -ERROR_HTTP_GET_SCHEME;
-    }
-
-    if (strcasecmp(scheme, "https") == 0)
-    {
-        LOG4CXX_ERROR(g_logger, "scheme is https, not support");
-        return -ERROR_HTTP_NOT_SUPPORT_HTTPS;
-    }
-
-    host_ = evhttp_uri_get_host(http_uri);
-    if (host_ == NULL)
-    {
-        LOG4CXX_ERROR(g_logger, "evhttp_uri_get_host error, url is " << url_);
-        return -ERROR_HTTP_GET_HOST;
-    }
-
-    port_ = evhttp_uri_get_port(http_uri);
-    if (port_ == -1)
-    {
-        LOG4CXX_ERROR(g_logger, "evhttp_uri_get_port error, url is " << url_);
-        return -ERROR_HTTP_GET_PORT;
-    }
-
-    path = evhttp_uri_get_path(http_uri);
-    if (path == NULL)
-    {
-        path = "/";
-    }
-
-    query = evhttp_uri_get_query(http_uri);
-    if (query == NULL)
-    {
-        snprintf(uri_, sizeof(uri_) - 1, "%s", path);
-    }
-    else
-    {
-        snprintf(uri_, sizeof(uri_) - 1, "%s?%s", path, query);
-    }
-    uri_[sizeof(uri_) - 1] = '\0';
-
     base_ = event_base_new();
     if (base_ == NULL)
     {
@@ -128,11 +74,89 @@ int HttpClient::Start()
     return 0;
 }
 
+int HttpClient::ParseUrl(string url, string &scheme, string &host, int &port, string &uri)
+{
+    const char *s= NULL;
+    const char *h = NULL;
+    const char *path = NULL;
+    const char *query = NULL;
+    char uri_array[256] = {0};
+    struct evhttp_uri *http_uri = NULL;
+
+    http_uri = evhttp_uri_parse(url.c_str());
+    if (http_uri == NULL)
+    {
+        LOG4CXX_ERROR(g_logger, "evhttp_uri_parse error, url is " << url);
+        return -ERROR_HTTP_PARSE_URL;
+    }
+
+    s = evhttp_uri_get_scheme(http_uri);
+    if (s== NULL)
+    {
+        LOG4CXX_ERROR(g_logger, "evhttp_uri_get_scheme error, url is " << url);
+        return -ERROR_HTTP_GET_SCHEME;
+    }
+
+    if (strcasecmp(s, "https") == 0)
+    {
+        LOG4CXX_ERROR(g_logger, "scheme is https, not support");
+        return -ERROR_HTTP_NOT_SUPPORT_HTTPS;
+    }
+    scheme.assign(s);
+
+    h = evhttp_uri_get_host(http_uri);
+    if (h == NULL)
+    {
+        LOG4CXX_ERROR(g_logger, "evhttp_uri_get_host error, url is " << url);
+        return -ERROR_HTTP_GET_HOST;
+    }
+    host.assign(h);
+
+    port = evhttp_uri_get_port(http_uri);
+    if (port == -1)
+    {
+        LOG4CXX_ERROR(g_logger, "evhttp_uri_get_port error, url is " << url);
+        return -ERROR_HTTP_GET_PORT;
+    }
+
+    path = evhttp_uri_get_path(http_uri);
+    if (path  == NULL)
+    {
+        path = "/";
+    }
+
+    query = evhttp_uri_get_query(http_uri);
+    if (query == NULL)
+    {
+        snprintf(uri_array, sizeof(uri_array) - 1, "%s", path);
+    }
+    else
+    {
+        snprintf(uri_array, sizeof(uri_array) - 1, "%s?%s", path, query);
+    }
+    uri_array[sizeof(uri_array) - 1] = '\0';
+    uri.assign(uri_array);
+
+    return 0;
+}
+
 int HttpClient::MakeHttpReq(SendMsg send_msg, struct evhttp_request **req)
 {
+    int ret = 0;
+    string scheme;
+    string host;
+    int port;
+    string uri;
     struct evhttp_connection *conn = NULL;
     struct bufferevent *bev = NULL;
-    
+
+    ret = ParseUrl(send_msg.url_, scheme, host, port, uri);
+    if (ret != 0)
+    {
+        LOG4CXX_ERROR(g_logger, "HttpClient::ParseUrl error, ret is " << ret);
+        return ret;
+    }
+
     bev = bufferevent_socket_new(base_, -1, BEV_OPT_CLOSE_ON_FREE);
     if (bev == NULL)
     {
@@ -140,7 +164,7 @@ int HttpClient::MakeHttpReq(SendMsg send_msg, struct evhttp_request **req)
         return -ERROR_HTTP_NEW_BUFFEREVENT;
     }
 
-    conn = evhttp_connection_base_bufferevent_new(base_, NULL, bev, host_, port_);
+    conn = evhttp_connection_base_bufferevent_new(base_, NULL, bev, host.c_str(), port);
     if (conn == NULL)
     {
         LOG4CXX_ERROR(g_logger, "evhttp_connection_base_bufferevent_new error");
@@ -156,7 +180,7 @@ int HttpClient::MakeHttpReq(SendMsg send_msg, struct evhttp_request **req)
 
     struct evkeyvalq *output_headers = NULL;
     output_headers = evhttp_request_get_output_headers(*req);
-    evhttp_add_header(output_headers, "Host", host_);
+    evhttp_add_header(output_headers, "Host", host.c_str());
     evhttp_add_header(output_headers, "Content-Type", "application/json");
     evhttp_add_header(output_headers, "Connection", "close");
 
@@ -168,7 +192,7 @@ int HttpClient::MakeHttpReq(SendMsg send_msg, struct evhttp_request **req)
     snprintf(msg_len, 7, "%zu", send_msg.msg_info_.size());
     evhttp_add_header(output_headers, "Content-Length", msg_len);
 
-    int ret = evhttp_make_request(conn, *req, EVHTTP_REQ_POST, uri_);
+    ret = evhttp_make_request(conn, *req, EVHTTP_REQ_POST, uri.c_str());
     if (ret != 0)
     {
         LOG4CXX_ERROR(g_logger, "evhttp_make_request error");
