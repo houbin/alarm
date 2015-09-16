@@ -69,7 +69,7 @@ void CLogicOpt::StartLogicOpt(const std::string& message)
         //其他的method认为是推送消息的回复消息
 		LOG4CXX_ERROR(g_logger, "CLogicOpt::StartLogicOpt method is " << method);
         HandlePushMsgResp();
-        goto SEND_RESPONSE;
+        return;
     }
 
 SEND_RESPONSE:
@@ -134,7 +134,9 @@ int CLogicOpt::DeviceLogin()
             goto out;
         }
 
-        ret = CLogicOpt::SetDeviceAddrCache(conn_->dev_id, utils::G<CGlobalSettings>().public_addr_, utils::G<CGlobalSettings>().private_addr_, dev_ip);
+        string dev_public_addr = utils::G<CGlobalSettings>().public_addr_ + ":15030";
+        string dev_private_addr = utils::G<CGlobalSettings>().private_addr_ + ":15031";
+        ret = CLogicOpt::SetDeviceAddrCache(conn_->dev_id, dev_public_addr, dev_private_addr, dev_ip);
         if (ret != 0)
         {
 	        LOG4CXX_ERROR(g_logger, "DeviceBeacon getsockname error");

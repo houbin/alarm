@@ -208,6 +208,7 @@ conn* CWorkerThread::conn_new(const CQ_ITEM* item, LIBEVENT_THREAD* libevent_thr
 	struct timeval heartbeat_sec;
 	heartbeat_sec.tv_sec = utils::G<CGlobalSettings>().client_heartbeat_timeout_;
 	heartbeat_sec.tv_usec= 0;
+    LOG4CXX_TRACE(g_logger, "client heartbeat timeout " << heartbeat_sec.tv_sec);
 	bufferevent_set_timeouts(client_tcp_event, &heartbeat_sec, NULL);
 
 	bufferevent_enable(client_tcp_event, flag);

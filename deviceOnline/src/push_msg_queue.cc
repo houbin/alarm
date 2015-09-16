@@ -31,6 +31,7 @@ int WaitFinishPushMsgQueue::SubmitWaitFinishPushMsg(int push_cnt, PushMsg push_m
 
 int WaitFinishPushMsgQueue::FinishPushMsg(int push_cnt, int ret, JSONNode &param_node)
 {
+    LOG4CXX_TRACE(g_logger, "finish push msg, push_cnt " << push_cnt << ", ret " << ret);
     Mutex::Locker lock(queue_mutex_);
 
     map<int, PushMsg>::iterator iter = wait_finish_msg_queue_.find(push_cnt);
@@ -47,6 +48,7 @@ int WaitFinishPushMsgQueue::FinishPushMsg(int push_cnt, int ret, JSONNode &param
         resp_ct->Complete(ret);
     }
 
+    LOG4CXX_TRACE(g_logger, "finish push msg ok, push_cnt " << push_cnt << ", ret " << ret);
     return 0;
 }
 

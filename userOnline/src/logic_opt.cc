@@ -61,7 +61,7 @@ void CLogicOpt::StartLogicOpt(const std::string& message)
     else
     {
         HandlePushMsgResp();
-        goto SEND_RESPONSE;
+        return;
     }
 
 SEND_RESPONSE:

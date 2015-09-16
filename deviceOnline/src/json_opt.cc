@@ -217,8 +217,15 @@ string CJsonOpt::JsonJoinLoginRes(int ret)
 
 string CJsonOpt::JsonJoinPushMsgToDev(int push_cnt)
 {
-    out_.push_back(JSONNode(JK_SEND_CNT, push_cnt));
-    return out_.write();
+    JSONNode send_info;
+    int count = out_.size();
+    int i = 0;
+    for (; i < count; i++)
+    {
+        send_info.push_back(out_[i]);
+    }
+    send_info.push_back(JSONNode(JK_SEND_CNT, push_cnt));
+    return send_info.write();
 }
 
 string CJsonOpt::JsonJoinPushMsgResToHttpServer(int send_cnt, int result, JSONNode &param_node)

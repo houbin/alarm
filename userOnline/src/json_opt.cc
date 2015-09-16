@@ -126,8 +126,17 @@ string CJsonOpt::JsonJoinBeaconRes(int ret)
 
 string CJsonOpt::JsonJoinPushMsgToClient(int push_mid)
 {
-    out_.push_back(JSONNode(JK_MESSAGE_ID, push_mid));
-    return out_.write();
+    //out_.push_back(JSONNode(JK_MESSAGE_ID, push_mid));
+
+    JSONNode send_info;
+    int count = out_.size();
+    int i = 0;
+    for (; i < count; i++)
+    {
+        send_info.push_back(out_[i]);
+    }
+    send_info.push_back(JSONNode(JK_MESSAGE_ID, push_mid));
+    return send_info.write();
 }
 
 string CJsonOpt::JsonJoinPushMsgRes(int mid, int result)
