@@ -64,15 +64,12 @@ void CLogicOpt::StartLogicOpt(const std::string& message)
         DeviceBeacon();
         goto SEND_RESPONSE;
     }
-    else if (method == METHOD_SET_STREAMSERVER_ADDR)
+    else // (method == METHOD_SET_STREAMSERVER_ADDR)
     {
+        //其他的method认为是推送消息的回复消息
+		LOG4CXX_ERROR(g_logger, "CLogicOpt::StartLogicOpt method is " << method);
         HandlePushMsgResp();
         goto SEND_RESPONSE;
-    }
-    else
-    {
-		LOG4CXX_ERROR(g_logger, "CLogicOpt::StartLogicOpt method invalid");
-        return;
     }
 
 SEND_RESPONSE:
