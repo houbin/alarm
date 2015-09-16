@@ -98,13 +98,12 @@ int CJsonOpt::JsonParsePushMsg(string &guid)
 
 int CJsonOpt::JsonParsePushMsgResp(int &ret)
 {
-    if (!VerifyJsonField(JK_ERROR))
+    if (!VerifyJsonField(JK_RESULT))
     {
         return -1;
     }
 
-    JSONNode errorcode_node = in_[JK_ERROR].as_node();
-    ret = errorcode_node[JK_ERRORCODE].as_int();
+    ret = in_[JK_RESULT].as_int();
 
     return 0;
 }

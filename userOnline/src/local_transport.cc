@@ -30,7 +30,6 @@ PushMsgRespContext::~PushMsgRespContext()
 
 void PushMsgRespContext::Finish(int ret)
 {
-    // ×ªÒå\r\nÎª\\r\\n
     CJsonOpt json_opt;
     string push_msg_resp = json_opt.JsonJoinPushMsgRes(recv_mid_, ret);
     string response_msg = utils::ReplaceString(push_msg_resp, "\\r\\n", "\\\\r\\\\n");

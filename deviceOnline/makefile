@@ -13,11 +13,12 @@ MAKE_DIR = .
 INCLUDE_DIR = ${MAKE_DIR}/include
 OBJ_DIR = ${MAKE_DIR}/obj
 SRC_DIR = ${MAKE_DIR}/src
+UTIL_DIR = ${MAKE_DIR}/../util
 LIB_DIR = ${MAKE_DIR}/lib
 DEBUG_DIR = ${MAKE_DIR}/debug
 RELEASE_DIR = ${MAKE_DIR}/release
 
-CFLAGS = -Wall -c -fmessage-length=0 -DNDEBUG
+CFLAGS = -Wall -c -DNDEBUG
 FLAG_DEBUG = -g 
 INCLUDE = -I${INCLUDE_DIR} -I${SRC_DIR} -I/usr/include/boost148
 LIB = -lhiredis -llog4cxx -ljson -lboost_system -lboost_regex -L${OBJ_DIR} -L/usr/local/lib -levent
@@ -27,13 +28,13 @@ EXEC = deviceOnline
 
 # 依赖文件查找路径
 vpath %.h ${INCLUDE_DIR}
-vpath %.cc ${SRC_DIR}
+vpath %.cc ${SRC_DIR}:${UTIL_DIR}
 vpath %.d ${OBJ_DIR}
 vpath %.o ${OBJ_DIR}
 
 # 指定SRC OBJ DEP
 # 不带目录的basename
-SRC_TMP := $(wildcard ${SRC_DIR}/*.cc)
+SRC_TMP := $(wildcard ${SRC_DIR}/*.cc) $(wildcard ${UTIL_DIR}/*.cc)
 CXX_SRCS := $(notdir $(SRC_TMP))
 CXX_OBJS := $(patsubst %.cc,%.o,${CXX_SRCS})
 CXX_DEPS := $(patsubst %.cc,%.d,${CXX_SRCS})
