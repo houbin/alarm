@@ -39,6 +39,8 @@ void PushMsgRespContext::Finish(int ret)
         LOG4CXX_ERROR(g_logger, "send push msg reponse error, sfd " << recv_sfd_);
     }
 
+    LOG4CXX_ERROR(g_logger, "send push msg response, recv mid " << recv_mid_);
+
     return;
 }
 
@@ -182,6 +184,7 @@ void CLocalTransport::HandleMsg(LOCAL_REV_DATA *ptr_data, string push_msg_str)
         push_msg.push_mid = ++g_push_msg_mid;
         push_msg.guid = guid;
         push_msg.push_msg = json_opt.JsonJoinPushMsgToClient(push_msg.push_mid);
+        LOG4CXX_TRACE(g_logger, "push to client msg: " << push_msg.push_msg);
         push_msg.ct = push_msg_resp_ct;
         g_msg_push_queue->SubmitMsg(push_msg);
     }

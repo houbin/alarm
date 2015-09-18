@@ -44,6 +44,8 @@ int WaitFinishPushMsgQueue::FinishPushMsg(int push_mid, int ret)
         ct->Complete(ret);
     }
 
+    LOG4CXX_ERROR(g_logger, "finish push message, push_mid  " << push_mid);
+
     return 0;
 }
 
@@ -96,7 +98,7 @@ void *PushMsgQueue::Entry()
             ret = CLogicOpt::GetGuidFdFromCache(push_msg.guid, fd);
             if (ret != 0) 
             {
-                LOG4CXX_ERROR(g_logger, "CRedisOpt::GetDeviceFdFromCache error, guid" << push_msg.guid << ", ret %d" << ret);
+                LOG4CXX_ERROR(g_logger, "CRedisOpt::GetDeviceFdFromCache error, guid " << push_msg.guid << ", ret " << ret);
                 ret = -ERROR_GET_USER_FD_FROM_CACHE;
                 goto entry_finish;
             }
