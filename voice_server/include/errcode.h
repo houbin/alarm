@@ -1,0 +1,4 @@
+#ifndef TCPSERVER_ERRCODE_H_
+#define TCPSERVER_ERRCODE_H_
+
+#endif
