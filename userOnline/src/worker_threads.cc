@@ -221,6 +221,8 @@ void CWorkerThread::ClientTcpReadCb(struct bufferevent *bev, void *arg)
 	conn* c = static_cast<conn*>(arg);
 	assert(c != NULL);
 
+	LOG4CXX_TRACE(g_logger, "CWorkerThread::ClientTcpReadCb in.");
+
 	int recv_size = 0;
 	if ((recv_size = bufferevent_read(bev, c->rBuf + c->rlen, DATA_BUFFER_SIZE-c->rlen)) > 0)
 	{
@@ -261,6 +263,8 @@ void CWorkerThread::ClientTcpReadCb(struct bufferevent *bev, void *arg)
 		memmove(c->rBuf, c->rBuf + len, DATA_BUFFER_SIZE - len);
 		c->rlen = c->rlen - len;
 	}
+
+    return;
 }
 
 void CWorkerThread::ClientTcpErrorCb(struct bufferevent *bev, short event, void *arg)

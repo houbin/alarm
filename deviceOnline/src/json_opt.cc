@@ -147,10 +147,17 @@ int CJsonOpt::JsonParsePushMsgResp(int &ret, JSONNode &param_node)
     JSONNode errorcode_node = in_[JK_ERROR].as_node();
     ret = errorcode_node[JK_ERRORCODE].as_int();
 
-    param_node = in_.duplicate();
-    param_node.pop_back(JK_SEND_CNT);
-    param_node.pop_back(JK_METHOD);
-    param_node.pop_back(JK_ERROR);
+    JSONNode temp_node = in_.duplicate();
+    temp_node.pop_back(JK_SEND_CNT);
+    temp_node.pop_back(JK_METHOD);
+    temp_node.pop_back(JK_ERROR);
+
+    int count = temp_node.size();
+    int i = 0;
+    for (; i < count; i++)
+    {
+        param_node.push_back(temp_node[i]);
+    }
 
     return 0;
 }
@@ -237,7 +244,12 @@ string CJsonOpt::JsonJoinPushMsgResToHttpServer(int send_cnt, int result, JSONNo
     {
         JSONNode param;
         param.set_name("param");
-        param.push_back(param_node);
+        int count = param_node.size();
+        int i = 0;
+        for (; i < count; i++)
+        {
+            param.push_back(param_node[i]);
+        }
 
         out_.push_back(param);
     }
