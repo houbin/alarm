@@ -4,6 +4,7 @@
 #include <event.h>
 #include "../util/coding.h"
 #include "worker.h"
+#include <string>
 
 enum MsgType
 {
@@ -17,6 +18,8 @@ enum MsgType
 //static const uint32_t kMsgMagicCode = 0x49564f4a;
 static const int kMsgHeaderSize = 4 + 4;
 
+#define MAX_GUID_LEN 256
+
 namespace tcpserver
 {
 
@@ -25,7 +28,7 @@ typedef struct _ConnectionInfo
     uint64_t conn_id;
     int cfd;
     
-    uint32_t cip;
+    std::string cip;
     uint16_t cport;
 
     struct bufferevent *buffer_event;

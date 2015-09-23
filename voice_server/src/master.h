@@ -7,11 +7,11 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include "../util/thread.h"
-#include "../util/logger.h"
 #include "../util/mutex.h"
 #include "../util/cond.h"
+#include "global.h"
 #include "worker.h"
-#include "dispatch_queue.h"
+#include "dispatcher.h"
 
 using namespace util;
 
@@ -35,7 +35,7 @@ class Worker;
 class Master : public Thread
 {
 public:
-    Master(Logger *logger, string name, Dispatcher *dispatcher, MasterOption &master_option);
+    Master(string name, MasterOption &master_option);
     ~Master();
 
     int32_t Init();
@@ -43,16 +43,17 @@ public:
     void *Entry();
     void Wait();
 
+    void Shutdown();
+
     int32_t OpenServerSocket();
     void AcceptCb(int fd, short event, void *arg);
     int AcceptClient(struct sockaddr_in *client_addr);
     int32_t PickOneWorker(Worker **worker);
 
     string GetDataProtocol();
-    DispatchQueue *GetDispatchQueue();
+    Dispatcher* GetDispatcher();
 
 private:
-    Logger *logger_;
     string name_;
 
     int listen_fd_;
@@ -64,7 +65,9 @@ private:
     
     MasterOption master_option_;
 
-    DispatchQueue *dispatch_queue_;
+    Dispatcher *dispatcher;
+
+    bool stop_;
 };
 
 }

@@ -7,6 +7,8 @@
 #include <event2/buffer.h>
 #include "connection.h"
 #include "global.h"
+#include "../util/slice.h"
+#include "tlv_define.h"
 
 using namespace util;
 
@@ -23,10 +25,31 @@ void RecvNotifiedCb(int fd, short event, void *arg)
     return;
 }
 
-void CloseConn(ConnectionInfo *conn_info)
+void CloseConn(ConnectionInfo *conn_info, uint32_t op_type)
 {
-    conn_info->in_buffer_len = 0;
+    assert(conn_info != NULL);
 
+    Worker *worker = conn_info->worker;
+    string data_protocol = worker->GetDataProtocol();
+    Dispatcher *dispatcher = worker->GetDispatcher();
+
+    switch(op_type)
+    {
+        case D_TIMEOUT:
+            dispatcher->HandleTimeout(conn_info);
+            break;
+        case D_CLOSE:
+            dispatcher->HandleClose(conn_info);
+            break;
+        case D_ERROR:
+            dispatcher->HandleError(conn_info);
+            break;
+        default:
+            LOG_ERROR(g_logger, "invalid op type");
+            break;
+    }
+
+    conn_info->in_buffer_len = 0;
     bufferevent_free(conn_info->buffer_event);
     safe_close(conn_info->cfd);
 
@@ -36,16 +59,8 @@ void CloseConn(ConnectionInfo *conn_info)
 void CloseErrorConn(ConnectionInfo *conn_info)
 {
     assert(conn_info != NULL);
-    CloseConn(conn_info);
+    CloseConn(conn_info, D_ERROR);
 }
-
-int DelimitJsonData(string recv_str, vector<string> &json_data_vec)
-{
-    // json数据以"\r\n"为边界
-}
-
-int ParseJsonData()
-
 
 void ClientTcpReadCb(struct bufferevent *bev, void *arg)
 {
@@ -57,7 +72,7 @@ void ClientTcpReadCb(struct bufferevent *bev, void *arg)
 
     Worker *worker = conn_info->worker;
     string data_protocol = worker->GetDataProtocol();
-    DispatchQueue *dispatch_queue = worker->GetDispatchQueue();
+    Dispatcher *dispatcher = worker->GetDispatcher();
 
     while (true)
     {
@@ -89,8 +104,12 @@ void ClientTcpReadCb(struct bufferevent *bev, void *arg)
                     int i = 0;
                     for(; i < json_data_vec.size(); i++)
                     {
-                        QueueItem item(PRIORITY_DEFAULT, json_data_vec[i]);
-                        dispatch_queue->Enqueue(item);
+                        ret = dispatcher->HandleMsg(conn_info, json_data_vec[i]);
+                        if (ret != 0)
+                        {
+                            CloseErrorConn(conn_info);
+                            return;
+                        }
                     }
                     int len = str_recv.find_last_of(CRLF) + 1;
                     memmove(conn_info->in_buffer, conn_info->in_buffer + len, DATA_BUFFER_SIZE - len);
@@ -107,44 +126,58 @@ void ClientTcpReadCb(struct bufferevent *bev, void *arg)
             else if (data_protocol == DATA_PROTOCOL_TLV)
             {
                 // tlv是自己根据消息长度划分消息
-                int left_len = conn_info->in_buffer_len
-                while(left_size > 0)
+                if (conn_info->in_buffer_len < kMsgHeaderSize)
                 {
-                    if (left_size < kMsgHeaderSize)
-                    {
+                    if (left_size == 0)
                         break;
-                    }
-
-                    uint32_t type = DecodeFixed32(conn_info->in_buffer);
-                    uint32_t length = DecodeFixed32(conn_info->in_buffer + 4);
-                    if (length > DATA_BUFFER_SIZE)
-                    {
-                        LOG_ERROR(g_logger, "tlv length is large than DATA_BUFFER_SIZE, type is %u, length is %u", type, length);
-                        conn_info->in_buffer_len = 0;
-                        left_size = 0;
-                        break;
-                    }
-
-                    if (length > left_size)
-                    {
-                        // data not ok
-                        break;
-                    }
-
-                    string tlv_date(conn_info->in_buffer, length);
-                    QueueItem item(PRIORITY_DEFAULT, tlv_date);
-                    dispatch_queue->Enqueue(item);
-
-                    left_size = conn_info->in_buffer_len - length;
-                    memmove(conn_info->in_buffer, conn_info->in_buffer + length, left_size);
-                    conn_info->in_buffer_len = left_size;
+                    else
+                        return;
                 }
+
+                uint32_t type = DecodeFixed32(conn_info->in_buffer);
+                uint32_t length = DecodeFixed32(conn_info->in_buffer + 4);
+                uint32_t msg_length = DecodeFixed32(conn_info->in_buffer + 8);
+                if (type != TYPE_LENGTH || length != 4 || msg_length > DATA_BUFFER_SIZE || msg_length < kMsgHeaderSize)
+                {
+                    // 请求包不合法
+                    LOG_ERROR(g_logger, "pkt invalid, type is %u, length is %u, msg length is %u", type, length, msg_length);
+                    CloseErrorConn(conn_info);
+                    return;
+                }
+
+                if (conn_info->in_buffer_len < msg_length)
+                {
+                    if (left_size == 0)
+                        break;
+                    else
+                        continue;
+                }
+
+                // 处理数据
+                Slice tlv_data(conn_info->in_buffer + 12, msg_length - 12);
+                ret = dispatcher->HandleMsg(conn_info, tlv_data);
+                if (ret != 0)
+                {
+                    CloseErrorConn(conn_info);
+                    return;
+                }
+
+                // 处理下一个协议包，或者继续读
+                conn_info->in_buffer_len -= msg_length;
+                if (conn_info == 0)
+                {
+                    if (left_size == 0)
+                        break;
+                    else
+                        return;
+                }
+
+                memmove(conn_info->in_buffer, conn_info->in_buffer + msg_length, conn_info->in_buffer_len);
             }
             else
             {
                 LOG_ERROR(g_logger, "data protocol invalid");
             }
-
         }
     }
 
@@ -155,39 +188,36 @@ void ClientTcpErrorCb(struct bufferevent *bev, short event, void *arg)
 {
     assert(arg != NULL);
     ConnectionInfo *conn_info = (ConnectionInfo *)arg;
-
-    struct in_addr client_addr;
-    client_addr.s_addr = conn_info->cip;
-    LOG_DEBUG(logger, "client tcp error, conn id %" PRIu64 ", cfd %d, ip %s, port %u", conn_info->conn_id, conn_info->cfd,
-                            inet_ntoa(client_addr), conn_info->cport);
+    uint32_t op_type;
 
     if (event & BEV_EVENT_TIMEOUT)
     {
-        LOG_WARN(logger, "client tcp event timeout, conn id %" PRIu64 ", cfd %d, ip %s, port %u", conn_info->conn_id, conn_info->cfd,
+        LOG_WARN(g_logger, "client tcp event timeout, conn id %" PRIu64 ", cfd %d, ip %s, port %u", conn_info->conn_id, conn_info->cfd,
                             inet_ntoa(client_addr), conn_info->cport);
+        op_type = D_TIMEOUT;
     }
     else if (event & BEV_EVENT_EOF)
     {
-        LOG_WARN(logger, "client tcp event eof, conn id %" PRIu64 ", cfd %d, ip %s, port %u", conn_info->conn_id, conn_info->cfd,
+        LOG_WARN(g_logger, "client tcp event eof, conn id %" PRIu64 ", cfd %d, ip %s, port %u", conn_info->conn_id, conn_info->cfd,
                             inet_ntoa(client_addr), conn_info->cport);
-    
+        op_type = D_CLOSE;
     }
     else if (event & BEV_EVENT_ERROR)
     {
         int error_code = EVUTIL_SOCKET_ERROR();
-        LOG_DEBUG(logger, "client tcp event error, error code %d, msg %s, conn id %" PRIu64 ", cfd %d, ip %s, port %u", 
+        LOG_DEBUG(g_logger, "client tcp event error, error code %d, msg %s, conn id %" PRIu64 ", cfd %d, ip %s, port %u", 
                     error_code, evutil_socket_error_to_string(error_code), conn_info->conn_id, conn_info->cfd, 
                     inet_ntoa(client_addr), conn_info->cport);
+        op_type = D_ERROR;
     }
 
-    bufferevent_free(conn_info->buffer_event);
-    safe_close(conn_info->cfd);
+    CloseConn(conn_info, op_type);
 
     return;
 }
 
-Worker::Worker(Logger *logger, int i, uint32_t worker_conn_count, int read_timeout, int write_timeout, Master *master)
-: logger_(logger), id_(i), worker_conn_count_(worker_conn_count), read_timeout_(read_timeout), 
+Worker::Worker(int i, uint32_t worker_conn_count, int read_timeout, int write_timeout, Master *master)
+: id_(i), worker_conn_count_(worker_conn_count), read_timeout_(read_timeout), 
 write_timeout_(write_timeout), master_(master), conn_info_queue_mutex_("Worker::ConnectionInfoQueueMutex")
 {
     base_ = NULL;
@@ -209,7 +239,7 @@ int32_t Worker::Init()
     ret = pipe(fds);
     if (ret != 0)
     {
-        LOG_ERROR(logger_, "create pipe error, error %d, msg %d", -errno, strerror(errno));
+        LOG_ERROR(g_logger, "create pipe error, error %d, msg %d", -errno, strerror(errno));
         return -1;
     }
 
@@ -219,28 +249,28 @@ int32_t Worker::Init()
     base_ = event_base_new();
     if(base_ == NULL)
     {
-        LOG_ERROR(logger_, "event_base_new error");
+        LOG_ERROR(g_logger, "event_base_new error");
         return -1;
     }
 
     notified_event_ = event_new(base_, notified_rfd_, EV_READ|EV_PERSIST, tcpserver::RecvNotifiedCb, (void *)this);
     if (notified_event_ == NULL)
     {
-        LOG_ERROR(logger_, "event_new error");
+        LOG_ERROR(g_logger, "event_new error");
         return -1;
     }
 
     ret = event_add(notified_event_, NULL);
     if (ret != 0)
     {
-        LOG_ERROR(logger_, "event_add error");
+        LOG_ERROR(g_logger, "event_add error");
         return -1;
     }
 
     return 0;
 }
 
-int32_t Worker::Start()
+int32_t Worker:Start()
 {
     Create();
     return 0;
@@ -250,11 +280,33 @@ void* Worker::Entry()
 {
     int ret = 0;
     
-    event_base_dispatch(base_);
+    LOG_INFO(g_logger, "worker %d run", id_);
 
-    LOG_INFO(logger_, "event_base_dispatch return");
+    event_base_dispatch(base_);
+    event_free(notified_event_);
+    event_base_free(base_);
+
+    LOG_INFO(g_logger, "worker %d done", id_);
 
     return NULL;
+}
+
+void Worker::Wait()
+{
+    Join();
+
+    return;
+}
+
+void Worker::Shutdown()
+{
+    LOG_INFO(g_logger, "worker %d try to shutdown", id_);
+    event_base_loopbreak(base_);
+
+    Wait();
+    LOG_INFO(g_logger, "worker %d shutdown ok", id_);
+    
+    return;
 }
 
 int Worker::GetId()
@@ -274,7 +326,7 @@ void Worker::RecvNotifiedCb(int fd, short event, void *arg)
 
     if (read(fd, buf, 1) != 1)
     {
-        LOG_ERROR(logger_, "read master -> worker notify error");
+        LOG_ERROR(g_logger, "read master -> worker notify error");
         return;
     }
 
@@ -289,14 +341,14 @@ void Worker::RecvNotifiedCb(int fd, short event, void *arg)
 
     struct in_addr client_addr;
     client_addr.s_addr = conn_info->cip;
-    LOG_DEBUG(logger_, "pop conn info, conn id %" PRIu64 ", cfd %d, ip %s, port %u", conn_info->conn_id, conn_info->cfd,
+    LOG_DEBUG(g_logger, "pop conn info, conn id %" PRIu64 ", cfd %d, ip %s, port %u", conn_info->conn_id, conn_info->cfd,
                 inet_ntoa(client_addr), conn_info->cport);
 
     conn_info->buffer_event = bufferevent_socket_new(base_, conn_info->cfd, BEV_OPT_CLOSE_ON_FREE);
     if (conn_info->buffer_event == NULL)
     {
         int error_code = EVUTIL_SOCKET_ERROR();
-        LOG_ERROR(logger_, "bufferevent_socket_new error, error %d, msg %s", error_code, evutil_socket_error_to_string(error_code));
+        LOG_ERROR(g_logger, "bufferevent_socket_new error, error %d, msg %s", error_code, evutil_socket_error_to_string(error_code));
         return;
     }
 
@@ -305,12 +357,12 @@ void Worker::RecvNotifiedCb(int fd, short event, void *arg)
 
     conn_info->in_buffer_len = 0;
     memset(conn_info->in_buffer, 0, sizeof(conn_info->in_buffer));
-    conn_info->out_buffer_len = 0;
-    memset(conn_info->out_buffer, 0, sizeof(conn_info->out_buffer));
+    //conn_info->out_buffer_len = 0;
+    //memset(conn_info->out_buffer, 0, sizeof(conn_info->out_buffer));
 
     //test sleep 10s
     //sleep(10);
-    LOG_DEBUG(logger_, "add client to worker, conn id %" PRIu64 ", cfd %d, ip %s, port %u", conn_info->conn_id, conn_info->cfd, 
+    LOG_DEBUG(g_logger, "add client to worker, conn id %" PRIu64 ", cfd %d, ip %s, port %u", conn_info->conn_id, conn_info->cfd, 
                         inet_ntoa(client_addr), conn_info->cport);
     
     return;
@@ -318,7 +370,7 @@ void Worker::RecvNotifiedCb(int fd, short event, void *arg)
 
 int32_t Worker::PutConnInfo(ConnectionInfo *conn_info)
 {
-    LOG_DEBUG(logger_, "put conn info, conn id %" PRIu64 "", conn_info->conn_id);
+    LOG_DEBUG(g_logger, "put conn info, conn id %" PRIu64 "", conn_info->conn_id);
     Mutex::Locker lock(conn_info_queue_mutex_);
     conn_info_queue_.push_back(conn_info);
 
@@ -330,9 +382,9 @@ string Worker::GetDataProtocol()
     return master_->GetDataProtocol();
 }
 
-DispatchQueue* Worker::GetDispatchQueue()
+Dispatcher* Worker::GetDispatcher()
 {
-    return master_->GetDispatchQueue();
+    return master_->GetDispatcher();
 }
 
 }

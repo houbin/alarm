@@ -728,6 +728,13 @@ enum LogicProcessType
 // 用户上线
 #define JK_SESSION          "session"
 
+// 语音转发服务器
+#define JK_CLIENT_IP        "client_ip"
+#define JK_DEV_IP           "dev_ip"
+#define JK_IP               "ip"
+#define JK_PORT             "port"
+
+
 /*
  *   value of json
  */
@@ -744,6 +751,9 @@ enum LogicProcessType
 #define METHOD_ON_GET_DEV_IP            "on_get_dev_ip"
 #define METHOD_LOGOUT                   "logout"
 #define METHOD_ON_LOGOUT                "on_logout"
+#define METHOD_GET_VOICESERVER_ADDR     "get_voiceserver_addr"
+#define METHOD_ON_GET_VOICESERVER_ADDR  "on_get_voiceserver_addr"
+
 
 enum ClientType
 {

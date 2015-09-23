@@ -47,6 +47,19 @@
 #define ERROR_SESSION_ID_NOT_EXIST      12003
 #define ERROR_PARSE_MSG                 12004
 
+// voice server ´íÎóÂë
+#define ERROR_QUEUE_ITEM_PRIORITY_INVALID 13000
+#define ERROR_PARSE_GET_VOICESERVER_ADDR 13001
+#define ERROR_NO_CLIENT_OR_DEV_IP       13002
+#define ERROR_NO_PARAM                  13003
+#define ERROR_TLV_DATA_SIZE_TOO_LARGE   13004
+#define ERROR_TLV_PARSE_MID             13005
+#define ERROR_TLV_PARSE_CMD             13006
+#define ERROR_TLV_PARSE_DEV_ID          13007
+#define ERROR_TLV_PARSE_CLIENT_ID       13008
+#define ERROR_TLV_SEND_MSG              13009
+#define ERROR_TLV_LEN_NOT_0             13010
+
 
 #endif
 

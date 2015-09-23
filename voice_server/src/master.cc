@@ -23,15 +23,17 @@ void AcceptCb(int fd, short event, void *arg)
     return;
 }
 
-Master::Master(Logger *logger, string name, Dispatcher *dispatcher, MasterOption &master_option)
-: logger_(logger), name_(name), master_option_(master_option)
+Master::Master(string name, MasterOption &master_option)
+: name_(name), master_option_(master_option), stop_(false)
 {
-    dispatch_queue_ = new DispatchQueue(logger, dispatcher);
+    if (master_option.data_protocol_ == DATA_PROTOCOL_JSON)
+        dispatcher_ = new JsonDispatcher();
+    elseif(master_option.data_protocol_ == DATA_PROTOCOL_TLV)
+        dispatcher_ = new TlvDispatcher();
 }
 
 Master::~Master()
 {
-    safe_close(listen_fd_);
 }
 
 int32_t Master::Init()
@@ -41,7 +43,7 @@ int32_t Master::Init()
     main_base_ = event_base_new();
     if (main_base_ == NULL)
     {
-        LOG_ERROR(logger_, "event_base_new error");
+        LOG_ERROR(g_logger, "event_base_new error");
         return -1;
     }
 
@@ -50,25 +52,25 @@ int32_t Master::Init()
     {
         Worker *worker = NULL;
 
-        worker = new Worker(logger_, i, master_option.worker_conn_count_, 
+        worker = new Worker(i, master_option.worker_conn_count_, 
                         master_option.read_timeout_, master_option.write_timeout_, this);
         if (worker == NULL)
         {
-            LOG_ERROR(logger_, "new Worker %d error", i);
+            LOG_ERROR(g_logger, "new Worker %d error", i);
             return -1;
         }
 
         ret = worker->Init();
         if (ret != 0)
         {
-            LOG_ERROR(logger_, "Worker %d init error, ret %d", i, ret);
+            LOG_ERROR(g_logger, "Worker %d init error, ret %d", i, ret);
             return ret;
         }
 
         ret = worker->Start();
         if (ret != 0)
         {
-            LOG_ERROR(logger_, "worker %d start error, ret %d", i, ret);
+            LOG_ERROR(g_logger, "worker %d start error, ret %d", i, ret);
             return ret;
         }
 
@@ -78,21 +80,21 @@ int32_t Master::Init()
     ret = OpenServerSocket();
     if (ret != 0)
     {
-        LOG_ERROR(logger_, "open server socket error, ret %d", ret);
+        LOG_ERROR(g_logger, "open server socket error, ret %d", ret);
         return ret;
     }
 
     listen_event_ = event_new(main_base_, listen_fd_, EV_READ|EV_PERSIST, tcpserver::AcceptCb, (void*)this);
     if (listen_event_ == NULL)
     {
-        LOG_ERROR(logger_, "cannot new event");
+        LOG_ERROR(g_logger, "cannot new event");
         return -1;
     }
 
     ret = event_add(listen_event_, NULL);
     if (ret != 0)
     {
-        LOG_ERROR(logger_, "event_add error");
+        LOG_ERROR(g_logger, "event_add error");
         return -1;
     }
 
@@ -108,9 +110,12 @@ int32_t Master::Start()
 
 void *Master::Entry()
 {
-    event_base_dispatch(main_base_);
+    LOG_INFO(g_logger, "master run, name is %s", name_.c_str());
 
-    LOG_FATAL(logger_, "event_base_dispatch return");
+    event_base_dispatch(main_base_);
+    event_base_free(main_base_);
+
+    LOG_INFO(g_logger, "master done, name is %s", name_.c_str());
 
     return NULL;
 }
@@ -118,6 +123,27 @@ void *Master::Entry()
 void Master::Wait()
 {
     Join();
+
+    return;
+}
+
+void Master::Shutdown()
+{
+    LOG_INFO(g_logger, "master try to shutdown , name is %s", name_.c_str());
+
+    stop_ = true;
+
+    vector<Worker*>::iterator iter = workers_.begin();
+    for (; iter != workers_.end(); iter++)
+    {
+        Worker *w = *iter;
+        assert(w != NULL);
+        w->Shutdown();
+    }
+
+    event_base_loopbreak(main_base_);
+    safe_close(listen_fd_);
+    LOG_INFO(g_logger, "master shutdown ok, name is %s", name_.c_str());
 
     return;
 }
@@ -130,7 +156,7 @@ int32_t Master::OpenServerSocket()
     listen_fd_ = socket(AF_INET, SOCK_STREAM, 0);
     if (listen_fd_ < 0)
     {
-        LOG_ERROR(logger_, "create socket error, ret %d, msg %s", -errno, strerror(errno));
+        LOG_ERROR(g_logger, "create socket error, ret %d, msg %s", -errno, strerror(errno));
         return -errno;
     }
 
@@ -138,7 +164,7 @@ int32_t Master::OpenServerSocket()
     bool bRet = set_socket_noblock(listen_fd_);
     if (!bRet)
     {
-        LOG_ERROR(logger_, "cannot set nonblocking, listen fd %d", listen_fd_);
+        LOG_ERROR(g_logger, "cannot set nonblocking, listen fd %d", listen_fd_);
         safe_close(listen_fd_);
         return -1;
     }
@@ -154,7 +180,7 @@ int32_t Master::OpenServerSocket()
     ret = bind(listen_fd_, (struct sockaddr*)&listen_addr, sizeof(listen_addr));
     if (ret != 0)
     {
-        LOG_ERROR(logger_, "bind error, ret %d, msg %s", -errno, strerror(errno));
+        LOG_ERROR(g_logger, "bind error, ret %d, msg %s", -errno, strerror(errno));
         safe_close(listen_fd_);
         return -errno;
     }
@@ -162,7 +188,7 @@ int32_t Master::OpenServerSocket()
     ret = listen(listen_fd_, 1024);
     if (ret != 0)
     {
-        LOG_ERROR(logger_, "listen error, ret %d, msg %s", -errno, strerror(errno));
+        LOG_ERROR(g_logger, "listen error, ret %d, msg %s", -errno, strerror(errno));
         safe_close(listen_fd_);
         return -errno;
     }
@@ -176,12 +202,18 @@ void Master::AcceptCb(int fd, short event, void *arg)
     int32_t ret = 0;
     struct sockaddr_in client_addr;
 
-    LOG_DEBUG(logger_, "master accept event, fd %d, event %d", fd, event);
+    LOG_INFO(g_logger, "master %s accept event, fd %d, event %d", name_.c_str(), fd, event);
+
+    // if stop, don't accept client
+    if (stop_)
+    {
+        return;
+    }
 
     cfd = AcceptClient(&client_addr);
     if (cfd < 0)
     {
-        LOG_ERROR(logger, "accept client error");
+        LOG_ERROR(g_logger, "accept client error");
         return;
     }
 
@@ -189,7 +221,7 @@ void Master::AcceptCb(int fd, short event, void *arg)
     ret = PickOneWorker(&worker);
     if (ret != 0)
     {
-        LOG_ERROR(logger, "no worker available");
+        LOG_ERROR(g_logger, "no worker available");
         return;
     }
 
@@ -197,19 +229,21 @@ void Master::AcceptCb(int fd, short event, void *arg)
     ConnectionInfo *conn_info = new ConnectionInfo;
     conn_info->conn_id = master_option.conn_count_;
     conn_info->cfd = cfd;
-    conn_info->cip = (uint32_t)client_addr.sin_addr.s_addr;
+    conn_info->cip = inet_ntoa(client_addr.sin_addr);
     conn_info->cport = ntohs(client_addr.sin_port);
     conn_info->Worker = worker;
 
-    LOG_DEBUG(logger_, "accept client, conn_id %" PRIu64 ", cfd %d, ip %s, port %d", conn_info->conn_id, cfd,
-                        inet_ntoa(client_addr.sin_addr), conn_info->cport);
+    LOG_DEBUG(g_logger, "accept client, conn_id %" PRIu64 ", cfd %d, ip:port is  %s:%d", conn_info->conn_id, cfd,
+                        conn_info->cip, conn_info->cport);
+
+    dispatcher_->HandleConnect(conn_info);
 
     // notify worker
     worker->PutConnInfo(conn_info);
     int notified_wfd = worker->GetNotifiedWFd();
     write(notified_wfd, "c", 1);
 
-    LOG_DEBUG(logger_, "conn id %" PRIu64 ", put to worker %d", conn_info->conn_id, worker->GetId());
+    LOG_DEBUG(g_logger, "conn id %" PRIu64 ", put to worker %d", conn_info->conn_id, worker->GetId());
 
     return;
 }
@@ -228,14 +262,14 @@ int Master::AcceptClient(struct sockaddr_in *client_addr)
             if (errno == EINTR)
                 continue;
 
-            LOG_ERROR(logger_, "accept error, ret %d, msg %s", -errno, strerror(errno));
+            LOG_ERROR(g_logger, "accept error, ret %d, msg %s", -errno, strerror(errno));
             break;
         }
 
         bool bRet = set_socket_noblock(cfd);
         if (!bRet)
         {
-            LOG_ERROR(logger_, "cannot set nonblocking, cfd %d", cfd);
+            LOG_ERROR(g_logger, "cannot set nonblocking, cfd %d", cfd);
             safe_close(cfd);
             cfd = -1;
         }
@@ -259,9 +293,9 @@ string Master::GetDataProtocol()
     return master_option_.data_protocol_;
 }
 
-DispatchQueue *Master::GetDispatchQueue()
+Dispatcher *Master::GetDispatcher()
 {
-    return dispatch_queue_;
+    return dispatcher_;
 }
 
 }
