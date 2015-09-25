@@ -37,12 +37,12 @@ public:
 
     void TimerThread();
 
-    void AddEventAfter(double seconds, Context *callback);
-    void AddEventAt(UTime when, Context *callback);
+    void AddEventAfter(double seconds, int key, Context *callback);
+    void AddEventAt(UTime when, int key, Context *callback);
 
-    void DoEvent(Context *callback);
+    void DoEvent(int key);
     void DoAllEvents();
-    bool CancelEvent(Context *callback);
+    bool CancelEvent(int key);
     bool CancelAllEvents();
 };
 

@@ -59,6 +59,9 @@
 #define ERROR_TLV_PARSE_CLIENT_ID       13008
 #define ERROR_TLV_SEND_MSG              13009
 #define ERROR_TLV_LEN_NOT_0             13010
+#define ERROR_CLIENT_NOT_BUILD_VC       13011
+#define ERROR_CANNOT_FIND_DEV_FOR_CLIENT 13012
+#define ERROR_ITEM_NOT_EXIST            13013
 
 
 #endif

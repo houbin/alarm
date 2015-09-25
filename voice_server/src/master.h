@@ -68,6 +68,8 @@ private:
     Dispatcher *dispatcher;
 
     bool stop_;
+
+    uint64_t conn_id_;
 };
 
 }

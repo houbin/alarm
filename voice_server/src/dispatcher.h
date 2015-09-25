@@ -7,6 +7,7 @@
 #include "json_opt.h"
 #include "connection.h"
 #include "voice_channel.h"
+#include "push_msg_timer_queue.h"
 
 using namespace std;
 
@@ -15,7 +16,7 @@ uint32_t g_push_msg_mid = 0;
 struct PushMsgInfo
 {
     uint32_t recv_mid;
-    uint32_t cfd;
+    int recv_cfd;
 };
 
 class Dispatcher
@@ -44,9 +45,9 @@ public:
 class TlvDispatcher : public Dispatcher
 {
 private:
-    VoiceChannelMap voice_channel_map_;
+    VoiceChannelManager vc_manager_;
 
-    map<uint32_t, PushMsgInfo> wait_finish_push_msg_map_;
+    PushMsgTimerQueue push_msg_timer_queue_;
 
 public:
     TlvDispatcher();
@@ -56,11 +57,33 @@ public:
     int32_t EncodeCommonTlv(string *resp_msg, uint32_t msg_len, uint32_t mid);
     int32_t EncodeRet(string *resp_msg, uint32_t on_cmd, int32_t ret);
 
-    int32_t HandleClientBuildVc(ConnectionInfo *conn_info, uint32_t mid, Slice &s);
-    int32_t ResponseClientBuildVc(ConnectionInfo *conn_info, uint32_t mid, int32_t ret);
+    int32_t SendMsg(int fd, string msg);
+    int32_t ForwardMsgToDev(int push_fd, uint32_t push_mid, string &push_msg, PushMsgContext *ct);
 
+    void PackClientBuildVcRespMsg(uint32_t mid, int32_t ret, string &string_msg)
+    int32_t HandleClientBuildVc(ConnectionInfo *conn_info, uint32_t mid, Slice &s);
+
+    void PackStartSendPushMsg(string &push_msg, uint32_t &push_mid);
     int32_t HandleClientStartSend(ConnectionInfo *conn_info, uint32_t mid, Slice &s);
-    int32_t ResponseClientStartSend(ConnectionInfo *conn_info, uint32_t mid, Slice &s); 
+
+    void PackStartSendRespMsg(uint32_t mid, string &resp_msg, int32_t ret);
+    int32_t HandleOnPushStartSend(ConnectionInfo *conn_info, uint32_t mid, Slice &s);
+
+    void PackSendVoicePushMsg(string &push_msg, uint32_t &push_mid, Slice &s);
+    int32_t HandleClientSendVoice(ConnectionInfo *conn_info, uint32_t mid, Slice &s);
+
+    void PackClientSendVoiceRespMsg(uint32_t mid, string &resp_msg, int32_t ret);
+    int32_t HandleOnPushClientVoice(ConnectionInfo *conn_info, uint32_t mid, Slice &s);
+
+    void PackClientFreeVcRespMsg(uint32_t mid, string &resp_msg, int32_t ret);
+    int32_t HandleClientFreeVc(ConnectionInfo *conn_info, uint32_t mid, Slice &s);
+
+    // dev protocol
+    void PackDevBuildVcRespMsg(uint32_t mid, string &resp_msg, int32_t ret);
+    int32_t HandleDevBuildVc(ConnectionInfo *conn_info, uint32_t mid, Slice &s);
+
+    void PackDevFreeVcRespMsg(uint32_t mid, string &resp_msg, int32_t ret);
+    int32_t HandleDevFreeVc(ConnectionInfo *conn_info, uint32_t mid, Slice &s);
 };
 
 #endif

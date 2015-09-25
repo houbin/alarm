@@ -23,6 +23,12 @@ static const int kMsgHeaderSize = 4 + 4;
 namespace tcpserver
 {
 
+enum
+{
+    GUID_CLIENT = 1,
+    GUID_DEV = 2,
+};
+
 typedef struct _ConnectionInfo
 {
     uint64_t conn_id;
@@ -37,6 +43,9 @@ typedef struct _ConnectionInfo
     //char out_buffer[CONN_BUFFER_LEN];
     //uint16_t out_buffer_len;
     Worker *worker;
+
+    int guid_type; // client or dev
+    string guid; // client or dev guid
 }ConnectionInfo;
 
 class TlvMsg

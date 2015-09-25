@@ -24,7 +24,7 @@ void AcceptCb(int fd, short event, void *arg)
 }
 
 Master::Master(string name, MasterOption &master_option)
-: name_(name), master_option_(master_option), stop_(false)
+: name_(name), master_option_(master_option), stop_(false), conn_count_(0)
 {
     if (master_option.data_protocol_ == DATA_PROTOCOL_JSON)
         dispatcher_ = new JsonDispatcher();
@@ -227,7 +227,8 @@ void Master::AcceptCb(int fd, short event, void *arg)
 
     ++conn_count_;
     ConnectionInfo *conn_info = new ConnectionInfo;
-    conn_info->conn_id = master_option.conn_count_;
+    memset(conn_info, 0, sizeof(ConnectionInfo));
+    conn_info->conn_id = conn_count_;
     conn_info->cfd = cfd;
     conn_info->cip = inet_ntoa(client_addr.sin_addr);
     conn_info->cport = ntohs(client_addr.sin_port);

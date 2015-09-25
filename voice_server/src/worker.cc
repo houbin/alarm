@@ -344,7 +344,8 @@ void Worker::RecvNotifiedCb(int fd, short event, void *arg)
     LOG_DEBUG(g_logger, "pop conn info, conn id %" PRIu64 ", cfd %d, ip %s, port %u", conn_info->conn_id, conn_info->cfd,
                 inet_ntoa(client_addr), conn_info->cport);
 
-    conn_info->buffer_event = bufferevent_socket_new(base_, conn_info->cfd, BEV_OPT_CLOSE_ON_FREE);
+    int be_flags = BEV_OPT_THREADSAFE | BEV_OPT_CLOSE_ON_FREE;
+    conn_info->buffer_event = bufferevent_socket_new(base_, conn_info->cfd, be_flags);
     if (conn_info->buffer_event == NULL)
     {
         int error_code = EVUTIL_SOCKET_ERROR();
