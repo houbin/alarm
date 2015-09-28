@@ -10,13 +10,12 @@
 #include "../util/mutex.h"
 #include "../util/cond.h"
 #include "global.h"
-#include "worker.h"
 #include "dispatcher.h"
 
 using namespace util;
+using namespace std;
 
-namespace tcpserver
-{
+class Worker;
 
 #define DATA_PROTOCOL_JSON "json"
 #define DATA_PROTOCOL_TLV "tlv"
@@ -31,7 +30,6 @@ struct MasterOption
     int write_timeout_; // 连接的写数据超时
 };
 
-class Worker;
 class Master : public Thread
 {
 public:
@@ -65,14 +63,12 @@ private:
     
     MasterOption master_option_;
 
-    Dispatcher *dispatcher;
+    Dispatcher *dispatcher_;
 
     bool stop_;
 
-    uint64_t conn_id_;
+    uint64_t conn_count_; //记录连接次数,包含已经断开的
 };
-
-}
 
 #endif 
 

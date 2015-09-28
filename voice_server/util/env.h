@@ -1,5 +1,5 @@
-#ifndef ENV_H_
-#define ENV_H_
+#ifndef UTIL_ENV_H_
+#define UTIL_ENV_H_
 
 #include <stdint.h>
 #include "slice.h"

@@ -109,18 +109,22 @@ bool CJsonOpt::JsonJoinCommon(string method, int ret)
 {
     out_.push_back(JSONNode(JK_MESSAGE_ID, mid_));
     out_.push_back(JSONNode(JK_METHOD, method));
-
-    JSONNode result_node(JSON_NODE);
-    result_node.set_name(JK_ERROR);
-    result_node.push_back(JSONNode(JK_ERRORCODE, ret));
-    out_.push_back(result_node);
+    out_.push_back(JSONNode(JK_RESULT, ret));
 
     return true;
 }
 
 string CJsonOpt::JsonJoinGetVoiceServerAddrResp(int ret, string &server_ip, int server_port)
 {
-    JsonJoinCommon()
+    JsonJoinCommon(METHOD_ON_GET_VOICESERVER_ADDR, ret);
+
+    JSONNode param_node;
+    param_node.set_name(JK_PARAM);
+    param_node.push_back(JSONNode(JK_IP, server_ip));
+    param_node.push_back(JSONNode(JK_PORT, server_port));
+    out_.push_back(param_node);
+
+    return out_.write();
 }
 
 

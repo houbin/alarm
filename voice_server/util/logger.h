@@ -1,5 +1,5 @@
-#ifndef STORAGE_LOGGER_H_
-#define STORAGE_LOGGER_H_
+#ifndef UTIL_LOGGER_H_
+#define UTIL_LOGGER_H_
 
 #include <stdio.h>
 #include <string.h>

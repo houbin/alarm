@@ -1,5 +1,5 @@
-#ifndef STORAGE_THREAD_H_
-#define STORAGE_THREAD_H_
+#ifndef UTIL_THREAD_H_
+#define UTIL_THREAD_H_
 
 #include <pthread.h>
 

@@ -1,6 +1,6 @@
 //Config.h  
-#ifndef STORAGE_CONFIG_H_
-#define STORAGE_CONFIG_H_
+#ifndef UTIL_CONFIG_H_
+#define UTIL_CONFIG_H_
 
 #pragma once  
 #include <string>  

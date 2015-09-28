@@ -1,13 +1,45 @@
 #include "push_msg_timer_queue.h"
 #include "../../public/error_code.h"
 
+AtomicUInt32 g_push_msg_mid;
+
+void PushMsgContext::EncodeRespMsg(string *resp_msg, uint32_t msg_len)
+{
+    PutFixed32(resp_msg, TYPE_LENGTH);
+    PutFixed32(resp_msg, 4);
+    PutFixed32(resp_msg, msg_len);
+
+    PutFixed32(resp_msg, TYPE_MID);
+    PutFixed32(resp_msg, 4);
+    PutFixed32(resp_msg, recv_mid_);
+
+    PutFixed32(resp_msg, response_type_);
+    PutFixed32(resp_msg, 4);
+    PutFixed32(resp_msg, -ERROR_RECV_PUSH_MSG_RESP_TIMEOUT);
+}
+
+void PushMsgContext::Finish(int ret)
+{
+    string msg;
+    uint32_t msg_len = 3 * (kMsgHeaderSize + 4);
+
+    EncodeRespMsg(&msg, msg_len);
+
+    if (!SocketOperate::WriteSfd(recv_cfd_, msg.c_str(), msg.size()))
+    {
+        LOG_ERROR(g_logger, "send response msg error, mid is %u, type is %u", recv_mid_, response_type_);
+    } 
+
+    return;
+}
+
 PushMsgTimerQueue::PushMsgTimerQueue()
 : mutex_("PushMsgTimerQueue::Mutex"), stop_(false)
 {
 
 }
 
-~PushMsgTimerQueue()
+PushMsgTimerQueue::~PushMsgTimerQueue()
 {
 
 }
@@ -37,7 +69,7 @@ int32_t PushMsgTimerQueue::AddEventAt(UTime when, uint32_t mid, PushMsgContext *
     pair<event_lookup_map_t::iterator, bool> rval = events_.insert(e_val);
     assert(rval.second);
 
-    if (iter == schedule_.first())
+    if (iter == schedule_.begin())
         cond_.Signal();
 
     return 0;
@@ -70,13 +102,13 @@ int32_t PushMsgTimerQueue::CancelEventUnlocked(uint32_t mid)
     return 0;
 }
 
-int32_t PushMsgContext::GetAndCancelEvent(uint32_t mid, PushMsgInfo &push_msg_info)
+int32_t PushMsgTimerQueue::GetAndCancelEvent(uint32_t mid, PushMsgInfo &push_msg_info)
 {
     LOG_DEBUG(g_logger, "get push msg info, mid %u", mid);
     Mutex::Locker lock(mutex_);
 
     event_lookup_map_t::iterator e_iter = events_.find(mid);
-    if (e_iter === events_.end())
+    if (e_iter == events_.end())
     {
         LOG_INFO(g_logger, "can't find event, mid is %u", mid);
         return -ERROR_ITEM_NOT_EXIST;
@@ -84,10 +116,10 @@ int32_t PushMsgContext::GetAndCancelEvent(uint32_t mid, PushMsgInfo &push_msg_in
 
     scheduled_map_t::iterator s_iter = e_iter->second;
     PushMsgContext *ct = s_iter->second;
-    push_msg_info.recv_mid = ct->recv_mid_;
-    push_msg_info.recv_cfd = ct->recv_cfd_;
-    push_msg_info.push_mid = ct->push_mid_;
-    push_msg_info.response_type = ct->response_type_;
+    push_msg_info.recv_mid_ = ct->recv_mid_;
+    push_msg_info.recv_cfd_ = ct->recv_cfd_;
+    push_msg_info.push_mid_ = ct->push_mid_;
+    push_msg_info.response_type_ = ct->response_type_;
 
     CancelEventUnlocked(mid);
 
@@ -112,12 +144,11 @@ void PushMsgTimerQueue::Shutdown()
 
 void *PushMsgTimerQueue::Entry()
 {
-    mutex_.Locker();
+    mutex_.Lock();
 
     while (!stop_)
     {
         UTime now = GetClockNow();
-        UTime when;
         while(!schedule_.empty())
         {
             scheduled_map_t::iterator s_iter = schedule_.begin();
@@ -143,7 +174,7 @@ void *PushMsgTimerQueue::Entry()
         if (schedule_.empty())
             cond_.Wait(mutex_);
         else
-            cond_.WaitUtil(mutex_, s_iter->first);
+            cond_.WaitUtil(mutex_, schedule_.begin()->first);
 
         LOG_DEBUG(g_logger, "push msg timer awake");
     }
@@ -153,7 +184,4 @@ void *PushMsgTimerQueue::Entry()
     LOG_DEBUG(g_logger, "push msg timer exiting");
     return 0;
 }
-
-
-
 

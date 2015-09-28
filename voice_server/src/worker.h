@@ -1,17 +1,24 @@
 #ifndef TCP_SERVER_WORKER_H_
 #define TCP_SERVER_WORKER_H_
 
-#include "global.h"
-#include "connection.h"
-#include "master.h"
 #include <deque>
+#include "../util/thread.h"
+#include "global.h"
 
 using namespace util;
+using namespace std;
 
-namespace tcpserver
+enum
 {
+    D_TIMEOUT,
+    D_CLOSE,
+    D_ERROR
+};
 
+struct ConnectionInfo;
 class Master;
+class Dispatcher;
+
 class Worker : public Thread
 {
 public:
@@ -29,6 +36,7 @@ public:
     int GetNotifiedWFd();
     void RecvNotifiedCb(int fd, short event, void *arg);
 
+    int32_t PutConnInfo(ConnectionInfo *conn_info);
     string GetDataProtocol();
     Dispatcher* GetDispatcher();
 
@@ -52,8 +60,6 @@ private:
     Mutex conn_info_queue_mutex_;
     deque<ConnectionInfo*> conn_info_queue_;
 };
-
-}
 
 #endif
 

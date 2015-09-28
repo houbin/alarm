@@ -11,7 +11,6 @@
 #include "libjson/libjson.h"
 #include "libjson/_internal/Source/JSONNode.h"
 #include "../../public/user_interface_defines.h"
-#include "defines.h"
 #include <deque>
 
 using namespace std;

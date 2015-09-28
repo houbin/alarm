@@ -8,11 +8,9 @@
 #include "global.h"
 #include "connection.h"
 #include "master.h"
+#include "worker.h"
 
 using namespace util;
-
-namespace tcpserver
-{
 
 void AcceptCb(int fd, short event, void *arg)
 {
@@ -28,7 +26,7 @@ Master::Master(string name, MasterOption &master_option)
 {
     if (master_option.data_protocol_ == DATA_PROTOCOL_JSON)
         dispatcher_ = new JsonDispatcher();
-    elseif(master_option.data_protocol_ == DATA_PROTOCOL_TLV)
+    else if(master_option.data_protocol_ == DATA_PROTOCOL_TLV)
         dispatcher_ = new TlvDispatcher();
 }
 
@@ -48,12 +46,12 @@ int32_t Master::Init()
     }
 
     int i = 0;
-    for (i; i < master_option.worker_count_; i++)
+    for (; i < master_option_.worker_count_; i++)
     {
         Worker *worker = NULL;
 
-        worker = new Worker(i, master_option.worker_conn_count_, 
-                        master_option.read_timeout_, master_option.write_timeout_, this);
+        worker = new Worker(i, master_option_.worker_conn_count_, 
+                        master_option_.read_timeout_, master_option_.write_timeout_, this);
         if (worker == NULL)
         {
             LOG_ERROR(g_logger, "new Worker %d error", i);
@@ -84,7 +82,7 @@ int32_t Master::Init()
         return ret;
     }
 
-    listen_event_ = event_new(main_base_, listen_fd_, EV_READ|EV_PERSIST, tcpserver::AcceptCb, (void*)this);
+    listen_event_ = event_new(main_base_, listen_fd_, EV_READ|EV_PERSIST, ::AcceptCb, (void*)this);
     if (listen_event_ == NULL)
     {
         LOG_ERROR(g_logger, "cannot new event");
@@ -175,7 +173,7 @@ int32_t Master::OpenServerSocket()
 
     memset(&listen_addr, 0, sizeof(listen_addr));
     listen_addr.sin_family = AF_INET;
-    listen_addr.sin_port = ntohs(master_option.listen_port_);
+    listen_addr.sin_port = ntohs(master_option_.listen_port_);
     listen_addr.sin_addr.s_addr = INADDR_ANY;
     ret = bind(listen_fd_, (struct sockaddr*)&listen_addr, sizeof(listen_addr));
     if (ret != 0)
@@ -232,10 +230,10 @@ void Master::AcceptCb(int fd, short event, void *arg)
     conn_info->cfd = cfd;
     conn_info->cip = inet_ntoa(client_addr.sin_addr);
     conn_info->cport = ntohs(client_addr.sin_port);
-    conn_info->Worker = worker;
+    conn_info->worker = worker;
 
     LOG_DEBUG(g_logger, "accept client, conn_id %" PRIu64 ", cfd %d, ip:port is  %s:%d", conn_info->conn_id, cfd,
-                        conn_info->cip, conn_info->cport);
+                        conn_info->cip.c_str(), conn_info->cport);
 
     dispatcher_->HandleConnect(conn_info);
 
@@ -251,7 +249,6 @@ void Master::AcceptCb(int fd, short event, void *arg)
 
 int Master::AcceptClient(struct sockaddr_in *client_addr)
 {
-    int ret = 0;
     int cfd = -1;
 
     do
@@ -284,7 +281,7 @@ int32_t Master::PickOneWorker(Worker **worker)
 {
     assert(worker != NULL);
 
-    *worker = workers_[conn_count_ % worker_count_];
+    *worker = workers_[conn_count_ % master_option_.worker_count_];
 
     return 0;
 }
@@ -297,7 +294,5 @@ string Master::GetDataProtocol()
 Dispatcher *Master::GetDispatcher()
 {
     return dispatcher_;
-}
-
 }
 

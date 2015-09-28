@@ -8,12 +8,12 @@
 #include "connection.h"
 #include "global.h"
 #include "../util/slice.h"
+#include "../include/utils.h"
 #include "tlv_define.h"
+#include "master.h"
+#include "dispatcher.h"
 
 using namespace util;
-
-namespace tcpserver
-{
 
 // master的连接分配通知
 void RecvNotifiedCb(int fd, short event, void *arg)
@@ -51,7 +51,6 @@ void CloseConn(ConnectionInfo *conn_info, uint32_t op_type)
 
     conn_info->in_buffer_len = 0;
     bufferevent_free(conn_info->buffer_event);
-    safe_close(conn_info->cfd);
 
     delete conn_info;
 }
@@ -65,7 +64,7 @@ void CloseErrorConn(ConnectionInfo *conn_info)
 void ClientTcpReadCb(struct bufferevent *bev, void *arg)
 {
     int ret = 0;
-    uint32_t msg_length = 0;
+    //uint32_t msg_length = 0;
 
     ConnectionInfo *conn_info = (ConnectionInfo *)arg;
     assert(conn_info != NULL);
@@ -97,11 +96,11 @@ void ClientTcpReadCb(struct bufferevent *bev, void *arg)
             {
                 // json协议是以\r\n为消息边界
                 string recv_str(conn_info->in_buffer, conn_info->in_buffer_len);
-                vector<string> json_data_str;
-                if (utils::FindCRLF(str_recv))
+                vector<string> json_data_vec;
+                if (utils::FindCRLF(recv_str))
                 {
-                    utils::SplitData(str_recv, CRLF, json_data_vec);
-                    int i = 0;
+                    utils::SplitData(recv_str, CRLF, json_data_vec);
+                    unsigned int i = 0;
                     for(; i < json_data_vec.size(); i++)
                     {
                         ret = dispatcher->HandleMsg(conn_info, json_data_vec[i]);
@@ -111,8 +110,8 @@ void ClientTcpReadCb(struct bufferevent *bev, void *arg)
                             return;
                         }
                     }
-                    int len = str_recv.find_last_of(CRLF) + 1;
-                    memmove(conn_info->in_buffer, conn_info->in_buffer + len, DATA_BUFFER_SIZE - len);
+                    int len = recv_str.find_last_of(CRLF) + 1;
+                    memmove(conn_info->in_buffer, conn_info->in_buffer + len, CONN_BUFFER_LEN - len);
                     conn_info->in_buffer_len -= len;
 
                     if (left_size == 0)
@@ -137,7 +136,7 @@ void ClientTcpReadCb(struct bufferevent *bev, void *arg)
                 uint32_t type = DecodeFixed32(conn_info->in_buffer);
                 uint32_t length = DecodeFixed32(conn_info->in_buffer + 4);
                 uint32_t msg_length = DecodeFixed32(conn_info->in_buffer + 8);
-                if (type != TYPE_LENGTH || length != 4 || msg_length > DATA_BUFFER_SIZE || msg_length < kMsgHeaderSize)
+                if (type != TYPE_LENGTH || length != 4 || msg_length > CONN_BUFFER_LEN || msg_length < kMsgHeaderSize)
                 {
                     // 请求包不合法
                     LOG_ERROR(g_logger, "pkt invalid, type is %u, length is %u, msg length is %u", type, length, msg_length);
@@ -154,7 +153,8 @@ void ClientTcpReadCb(struct bufferevent *bev, void *arg)
                 }
 
                 // 处理数据
-                Slice tlv_data(conn_info->in_buffer + 12, msg_length - 12);
+                //Slice tlv_data(conn_info->in_buffer + 12, msg_length - 12);
+                string tlv_data(conn_info->in_buffer + 12, msg_length - 12);
                 ret = dispatcher->HandleMsg(conn_info, tlv_data);
                 if (ret != 0)
                 {
@@ -192,14 +192,14 @@ void ClientTcpErrorCb(struct bufferevent *bev, short event, void *arg)
 
     if (event & BEV_EVENT_TIMEOUT)
     {
-        LOG_WARN(g_logger, "client tcp event timeout, conn id %" PRIu64 ", cfd %d, ip %s, port %u", conn_info->conn_id, conn_info->cfd,
-                            inet_ntoa(client_addr), conn_info->cport);
+        LOG_WARN(g_logger, "client tcp event timeout, conn id %" PRIu64 ", cfd %d, ip %s, port %u", 
+        conn_info->conn_id, conn_info->cfd, conn_info->cip.c_str(), conn_info->cport);
         op_type = D_TIMEOUT;
     }
     else if (event & BEV_EVENT_EOF)
     {
-        LOG_WARN(g_logger, "client tcp event eof, conn id %" PRIu64 ", cfd %d, ip %s, port %u", conn_info->conn_id, conn_info->cfd,
-                            inet_ntoa(client_addr), conn_info->cport);
+        LOG_WARN(g_logger, "client tcp event eof, conn id %" PRIu64 ", cfd %d, ip %s, port %u", 
+        conn_info->conn_id, conn_info->cfd, conn_info->cip.c_str(), conn_info->cport);
         op_type = D_CLOSE;
     }
     else if (event & BEV_EVENT_ERROR)
@@ -207,7 +207,7 @@ void ClientTcpErrorCb(struct bufferevent *bev, short event, void *arg)
         int error_code = EVUTIL_SOCKET_ERROR();
         LOG_DEBUG(g_logger, "client tcp event error, error code %d, msg %s, conn id %" PRIu64 ", cfd %d, ip %s, port %u", 
                     error_code, evutil_socket_error_to_string(error_code), conn_info->conn_id, conn_info->cfd, 
-                    inet_ntoa(client_addr), conn_info->cport);
+                    conn_info->cip.c_str(), conn_info->cport);
         op_type = D_ERROR;
     }
 
@@ -253,7 +253,7 @@ int32_t Worker::Init()
         return -1;
     }
 
-    notified_event_ = event_new(base_, notified_rfd_, EV_READ|EV_PERSIST, tcpserver::RecvNotifiedCb, (void *)this);
+    notified_event_ = event_new(base_, notified_rfd_, EV_READ|EV_PERSIST, ::RecvNotifiedCb, (void *)this);
     if (notified_event_ == NULL)
     {
         LOG_ERROR(g_logger, "event_new error");
@@ -270,7 +270,7 @@ int32_t Worker::Init()
     return 0;
 }
 
-int32_t Worker:Start()
+int32_t Worker::Start()
 {
     Create();
     return 0;
@@ -278,7 +278,7 @@ int32_t Worker:Start()
 
 void* Worker::Entry()
 {
-    int ret = 0;
+    //int ret = 0;
     
     LOG_INFO(g_logger, "worker %d run", id_);
 
@@ -321,7 +321,7 @@ int Worker::GetNotifiedWFd()
 
 void Worker::RecvNotifiedCb(int fd, short event, void *arg)
 {
-    int ret = 0;
+    //int ret = 0;
     char buf[1] = {0};
 
     if (read(fd, buf, 1) != 1)
@@ -339,12 +339,10 @@ void Worker::RecvNotifiedCb(int fd, short event, void *arg)
         assert(conn_info->cfd > 0);
     }
 
-    struct in_addr client_addr;
-    client_addr.s_addr = conn_info->cip;
     LOG_DEBUG(g_logger, "pop conn info, conn id %" PRIu64 ", cfd %d, ip %s, port %u", conn_info->conn_id, conn_info->cfd,
-                inet_ntoa(client_addr), conn_info->cport);
+               conn_info->cip.c_str(), conn_info->cport);
 
-    int be_flags = BEV_OPT_THREADSAFE | BEV_OPT_CLOSE_ON_FREE;
+    int be_flags = BEV_OPT_CLOSE_ON_FREE;
     conn_info->buffer_event = bufferevent_socket_new(base_, conn_info->cfd, be_flags);
     if (conn_info->buffer_event == NULL)
     {
@@ -353,8 +351,17 @@ void Worker::RecvNotifiedCb(int fd, short event, void *arg)
         return;
     }
 
-    bufferevent_setcb(conn_info->buffer_event, tcpserver::ClientTcpReadCb, NULL, ClientTcpErrorCb, (void *)conn_info);
+    bufferevent_setcb(conn_info->buffer_event, ::ClientTcpReadCb, NULL, ::ClientTcpErrorCb, (void *)conn_info);
     bufferevent_enable(conn_info->buffer_event, EV_READ|EV_PERSIST);
+    struct timeval hb_val;
+    if (GetDataProtocol() == "json")
+    {
+        hb_val.tv_sec = g_config->Read("json_read_timeout", 60);
+    }
+    else
+        hb_val.tv_sec = g_config->Read("tlv_read_timeout", 60);
+    hb_val.tv_usec = 0;
+    bufferevent_set_timeouts(conn_info->buffer_event, &hb_val, NULL);
 
     conn_info->in_buffer_len = 0;
     memset(conn_info->in_buffer, 0, sizeof(conn_info->in_buffer));
@@ -364,7 +371,7 @@ void Worker::RecvNotifiedCb(int fd, short event, void *arg)
     //test sleep 10s
     //sleep(10);
     LOG_DEBUG(g_logger, "add client to worker, conn id %" PRIu64 ", cfd %d, ip %s, port %u", conn_info->conn_id, conn_info->cfd, 
-                        inet_ntoa(client_addr), conn_info->cport);
+                        conn_info->cip.c_str(), conn_info->cport);
     
     return;
 }
@@ -386,7 +393,5 @@ string Worker::GetDataProtocol()
 Dispatcher* Worker::GetDispatcher()
 {
     return master_->GetDispatcher();
-}
-
 }
 

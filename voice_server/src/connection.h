@@ -2,34 +2,11 @@
 #define TCP_SERVER_CONNECTION_H_
 
 #include <event.h>
-#include "../util/coding.h"
-#include "worker.h"
 #include <string>
+#include "tlv_define.h"
 
-enum MsgType
-{
-    MSG_TYPE_PRINT = 0,
-    MSG_TYPE_ECHO = 1,
-    MSG_TYPE_PINGPONG = 2
-};
-
-#define CONN_BUFFER_LEN (10 * 1024)
-#define MAX_MSG_LENGTH 2048
-//static const uint32_t kMsgMagicCode = 0x49564f4a;
-static const int kMsgHeaderSize = 4 + 4;
-
-#define MAX_GUID_LEN 256
-
-namespace tcpserver
-{
-
-enum
-{
-    GUID_CLIENT = 1,
-    GUID_DEV = 2,
-};
-
-typedef struct _ConnectionInfo
+class Worker;
+struct ConnectionInfo
 {
     uint64_t conn_id;
     int cfd;
@@ -46,20 +23,7 @@ typedef struct _ConnectionInfo
 
     int guid_type; // client or dev
     string guid; // client or dev guid
-}ConnectionInfo;
-
-class TlvMsg
-{
-public:
-    uint32_t type;
-    uint32_t length;
-    char value[0];
-
-    void Encode(char *buffer);
-    void Decode(char *buffer);
 };
-
-}
 
 #endif
 

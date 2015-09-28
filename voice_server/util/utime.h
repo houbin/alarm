@@ -1,5 +1,5 @@
-#ifndef STORAGE_UTIME_H_
-#define STORAGE_UTIME_H_
+#ifndef UTIL_UTIME_H_
+#define UTIL_UTIME_H_
 
 #include <sys/time.h>
 #include <math.h>

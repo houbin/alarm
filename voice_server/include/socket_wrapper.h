@@ -25,6 +25,7 @@
 #include <errno.h>
 #include <time.h>
 #include <assert.h>
+#include <string>
 
 #define		BACKLOG     50
 

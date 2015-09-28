@@ -1,5 +1,5 @@
-#ifndef STORAGE_CRC32C_H_
-#define STORAGE_CRC32C_H_
+#ifndef UTIL_CRC32C_H_
+#define UTIL_CRC32C_H_
 
 #include <stddef.h>
 #include <stdint.h>

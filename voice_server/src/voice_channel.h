@@ -37,12 +37,13 @@ public:
     VoiceChannelManager() : mutex_("VoiceChannelManager::Mutex") { }
     ~VoiceChannelManager() { }
 
-    int32_t ConnectByDev(string dev_id, DevVcInfo dev_vc_info);
     int32_t ConnectByClient(string client_id, ClientVcInfo client_vc_info);
+    int32_t ConnectByDev(string dev_id, DevVcInfo dev_vc_info);
+    int32_t DisconnectByClient(string client_id, string dev_id);
     int32_t DisconnectByDev(string dev_id, string client_id);
-    int32_t DisconnectByClient(string client_id);
 
     int32_t RouteClientToDev(string client_id, string dev_id, int &dev_fd);
 };
 
 #endif
+

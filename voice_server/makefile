@@ -24,7 +24,7 @@ INCLUDE = -I${INCLUDE_DIR} -I${SRC_DIR} -I/usr/include/boost148
 LIB = -lhiredis -llog4cxx -ljson -lboost_system -lboost_regex -L${OBJ_DIR} -L/usr/local/lib -levent
 
 # 可执行程序名称
-EXEC = userOnline
+EXEC = voice_server
 
 # 依赖文件查找路径
 vpath %.h ${INCLUDE_DIR}

@@ -11,16 +11,14 @@
 
 using namespace std;
 
-uint32_t g_push_msg_mid = 0;
-
-struct PushMsgInfo
-{
-    uint32_t recv_mid;
-    int recv_cfd;
-};
+class PushMsgContext;
+struct ConnectionInfo;
 
 class Dispatcher
 {
+private:
+    string data_protocol_;
+
 public:
     Dispatcher(string data_protocol);
     ~Dispatcher();
@@ -29,8 +27,8 @@ public:
     int32_t HandleTimeout(ConnectionInfo *conn_info);
     int32_t HandleClose(ConnectionInfo *conn_info);
     int32_t HandleError(ConnectionInfo *conn_info);
-    virtual int32_t HandleMsg(ConnectionInfo *conn_info, string &msg_info);
-    virtual int32_t HandleMsg(ConnectionInfo *conn_info, Slice &s);
+    virtual int32_t HandleMsg(ConnectionInfo *conn_info, string &msg_info) = 0;
+    //virtual int32_t HandleMsg(ConnectionInfo *conn_info, Slice &s) = 0;
 };
 
 class JsonDispatcher : public Dispatcher
@@ -46,21 +44,23 @@ class TlvDispatcher : public Dispatcher
 {
 private:
     VoiceChannelManager vc_manager_;
-
     PushMsgTimerQueue push_msg_timer_queue_;
 
 public:
     TlvDispatcher();
     ~TlvDispatcher();
-    int32_t HandleMsg(ConnectionInfo *conn_info, Slice &s);
+    int32_t HandleMsg(ConnectionInfo *conn_info, string &tlv_data);
 
-    int32_t EncodeCommonTlv(string *resp_msg, uint32_t msg_len, uint32_t mid);
-    int32_t EncodeRet(string *resp_msg, uint32_t on_cmd, int32_t ret);
+    void EncodeCommonTlv(string *resp_msg, uint32_t msg_len, uint32_t mid);
+    void EncodeRet(string *resp_msg, uint32_t on_cmd, int32_t ret);
 
     int32_t SendMsg(int fd, string msg);
     int32_t ForwardMsgToDev(int push_fd, uint32_t push_mid, string &push_msg, PushMsgContext *ct);
 
-    void PackClientBuildVcRespMsg(uint32_t mid, int32_t ret, string &string_msg)
+    void PackHeartBeatRespMsg(uint32_t mid, int32_t ret, string &resp_msg);
+    int32_t HandleHeartbeat(ConnectionInfo *conn_info, uint32_t mid, Slice &s);
+
+    void PackClientBuildVcRespMsg(uint32_t mid, int32_t ret, string &string_msg);
     int32_t HandleClientBuildVc(ConnectionInfo *conn_info, uint32_t mid, Slice &s);
 
     void PackStartSendPushMsg(string &push_msg, uint32_t &push_mid);

@@ -1,5 +1,5 @@
-#ifndef STORAGE_MUTEX_H_
-#define STORAGE_MUTEX_H_
+#ifndef UTIL_MUTEX_H_
+#define UTIL_MUTEX_H_
 #include <pthread.h>
 
 namespace util {

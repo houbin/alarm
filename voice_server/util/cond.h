@@ -1,5 +1,5 @@
-#ifndef STORAGE_COND_H_
-#define STORAGE_COND_H_
+#ifndef UTIL_COND_H_
+#define UTIL_COND_H_
 
 #include <pthread.h>
 #include <assert.h>

@@ -1,5 +1,5 @@
-#ifndef STORAGE_CLOCK_H_
-#define STORAGE_CLOCK_H_
+#ifndef UTIL_CLOCK_H_
+#define UTIL_CLOCK_H_
 
 #include "utime.h"
 
