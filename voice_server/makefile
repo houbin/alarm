@@ -27,7 +27,7 @@ LIB = -lhiredis -llog4cxx -ljson -lboost_system -lboost_regex -L${OBJ_DIR} -L/us
 EXEC = voice_server
 
 # 依赖文件查找路径
-vpath %.h ${INCLUDE_DIR}
+vpath %.h ${INCLUDE_DIR}:${UTIL_DIR}
 vpath %.cc ${SRC_DIR}:${UTIL_DIR}
 vpath %.d ${OBJ_DIR}
 vpath %.o ${OBJ_DIR}
