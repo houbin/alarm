@@ -29,6 +29,7 @@
 *.app
 deviceOnline
 userOnline
+voice_server
 
 # dir
 ./objects
