@@ -6,6 +6,7 @@
 // Description : Hello World in C, Ansi-style
 //============================================================================
 
+#include <locale.h>
 #include <signal.h>
 #include "defines.h"
 #include "init_configure.h"
@@ -57,12 +58,13 @@ int main(int argc, char **argv)
 		exit(EXIT_FAILURE);
 	}
 
-	InitRedis();
-
 	if (daemon(1, 0) == -1)
 	{
 		LOG4CXX_FATAL(g_logger, "daemon failed.");
 	}
+
+	InitRedis();
+    setlocale(LC_ALL, "en_US.UTF-8");
     
     // clear redis data
     ClearGuidFdCache();
