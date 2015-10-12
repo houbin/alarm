@@ -12,7 +12,7 @@
 
 CJsonOpt::CJsonOpt()
 {
-	mid_ = 0;
+    mid_ = 0;
 }
 
 CJsonOpt::~CJsonOpt()
@@ -21,8 +21,8 @@ CJsonOpt::~CJsonOpt()
 
 void CJsonOpt::setJsonString(const std::string &msg)
 {
-	out_ = JSONNode();
-	json_string_ = msg;
+    out_ = JSONNode();
+    json_string_ = msg;
 }
 
 int CJsonOpt::GetMethod(string &method)

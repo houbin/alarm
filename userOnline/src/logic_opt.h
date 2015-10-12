@@ -20,10 +20,10 @@ class CRedisOpt;
 class CLogicOpt
 {
 public:
-	explicit CLogicOpt(conn* c);
-	virtual ~CLogicOpt();
+    explicit CLogicOpt(conn* c);
+    virtual ~CLogicOpt();
 
-	void StartLogicOpt(const std::string& message);
+    void StartLogicOpt(const std::string& message);
     int CheckSessionId(string guid);
 
     static int SetGuidFdCache(std::string guid, int fd);
@@ -32,16 +32,16 @@ public:
     
 private:
 
-	int UserBeacon();
+    int UserBeacon();
     int HandlePushMsgResp();
 
 private:
 
-	CJsonOpt*	jsonOpt_ptr_;
+    CJsonOpt*    jsonOpt_ptr_;
 
-	int 		result_;
-	conn* 		conn_;
-	std::string responseToClient_;
+    int         result_;
+    conn*         conn_;
+    std::string responseToClient_;
 };
 
 #endif /* MESSAGE_OPT_H_ */

@@ -5,9 +5,9 @@
 
 enum DB_NUMBER
 {
-	SESSION = 0,
-	STATUS  = 2,
-	REDIS_DEVICE_INFO = 6,
+    SESSION = 0,
+    STATUS  = 2,
+    REDIS_DEVICE_INFO = 6,
     REDIS_CLIENT_INFO = 7
 };
 
@@ -19,9 +19,9 @@ enum DB_NUMBER
 
 static inline std::string int2str(int v)
 {
-	std::stringstream ss;
-	ss << v;
-	return ss.str();
+    std::stringstream ss;
+    ss << v;
+    return ss.str();
 }
 
 
@@ -29,11 +29,11 @@ static inline std::string int2str(int v)
 inline std::string RedisKeyUserOnlineFlag(const std::string& username)
 { return username + std::string(ONLINE_FLAG);}
 
-#define CLIENT_LOGIN_INFO 	":loginclientinfo"
-#define KEY_LOGIN_PLATFORM 	":platform"
-#define KEY_MOBILE_ID		":moblieid"
-#define KEY_LANGUAGE_TYPE	":langt"
-#define KEY_ALARM_FLAG		":alarm"
+#define CLIENT_LOGIN_INFO     ":loginclientinfo"
+#define KEY_LOGIN_PLATFORM     ":platform"
+#define KEY_MOBILE_ID        ":moblieid"
+#define KEY_LANGUAGE_TYPE    ":langt"
+#define KEY_ALARM_FLAG        ":alarm"
 inline std::string RedisKeyClientLoginInfo(const std::string& username)
 { return username + std::string(CLIENT_LOGIN_INFO);}
 
@@ -75,8 +75,8 @@ inline std::string RedisKeyAllDevicesRelatedUser(const std::string& username)
 
 inline std::string RedisKeyDeviceHumiture(const std::string& device_guid, const std::string& timestamp)
 { return device_guid + std::string("&") + timestamp; }
-#define REDIS_HASH_FEILD_TEMPERATURE	"temperature"
-#define REDIS_HASH_FEILD_HUMIDNESS		"humidity"
+#define REDIS_HASH_FEILD_TEMPERATURE    "temperature"
+#define REDIS_HASH_FEILD_HUMIDNESS        "humidity"
 
 #define REDIS_LATEST_HUMITURE_KEY ":latesthumiturekey"
 inline std::string RedisKeyLatestDeviceHumitureKey(const std::string& device_guid)

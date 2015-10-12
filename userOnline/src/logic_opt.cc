@@ -20,36 +20,36 @@
 
 CLogicOpt::CLogicOpt(conn* c)
 {
-	conn_ = c;
-	result_ = 0;
-	jsonOpt_ptr_ = new CJsonOpt;
-	assert(jsonOpt_ptr_ != NULL);
+    conn_ = c;
+    result_ = 0;
+    jsonOpt_ptr_ = new CJsonOpt;
+    assert(jsonOpt_ptr_ != NULL);
 }
 
 CLogicOpt::~CLogicOpt()
 {
-	utils::SafeDelete(jsonOpt_ptr_);
+    utils::SafeDelete(jsonOpt_ptr_);
 }
 
 void CLogicOpt::StartLogicOpt(const std::string& message)
 {
     int ret = 0;
-	std::string custom_msg;
+    std::string custom_msg;
     string method;
 
-	LOG4CXX_INFO(g_logger, "CLogicOperate::StartLogicOpt" << message);
+    LOG4CXX_INFO(g_logger, "CLogicOperate::StartLogicOpt" << message);
 
-	jsonOpt_ptr_->setJsonString(message);
+    jsonOpt_ptr_->setJsonString(message);
     if (!jsonOpt_ptr_->JsonParseCommon())
     {
-		LOG4CXX_ERROR(g_logger, "CLogicOperate::StartLogicOpt:JsonParseCommon failed:" << message);
+        LOG4CXX_ERROR(g_logger, "CLogicOperate::StartLogicOpt:JsonParseCommon failed:" << message);
         return;
     }
 
     ret = jsonOpt_ptr_->GetMethod(method);
     if (ret != 0)
     {
-		LOG4CXX_ERROR(g_logger, "CLogicOperate::StartLogicOpt:GetMethod failed:" << message);
+        LOG4CXX_ERROR(g_logger, "CLogicOperate::StartLogicOpt:GetMethod failed:" << message);
         return;
     }
 
@@ -81,20 +81,20 @@ int CLogicOpt::UserBeacon()
     int ret = 0;
     string session_id;
 
-	LOG4CXX_TRACE(g_logger, "CLogicOpt::UserBeacon enter");
+    LOG4CXX_TRACE(g_logger, "CLogicOpt::UserBeacon enter");
 
     ret = jsonOpt_ptr_->JsonParseBeacon(session_id);
     if (ret != 0)
     {
         ret = -ERROR_PARSE_BEACON;
-	    LOG4CXX_ERROR(g_logger, "CLogicOpt::StartLogicOpt:JsonParseBecon failed");
+        LOG4CXX_ERROR(g_logger, "CLogicOpt::StartLogicOpt:JsonParseBecon failed");
         goto out;
     }
 
     if (!conn_)
     {
         ret = -ERROR_USER_CONNECT;
-	    LOG4CXX_ERROR(g_logger, "UserBeacon connect error");
+        LOG4CXX_ERROR(g_logger, "UserBeacon connect error");
         goto out;
     }
 
@@ -106,7 +106,7 @@ int CLogicOpt::UserBeacon()
     {
         conn_->is_online = false;
         CLogicOpt::RemoveGuidFdFromCache(conn_->guid);
-	    LOG4CXX_ERROR(g_logger, "UserBeacon check session id error");
+        LOG4CXX_ERROR(g_logger, "UserBeacon check session id error");
         goto out;
     }
 
@@ -118,10 +118,10 @@ int CLogicOpt::UserBeacon()
         if (ret != 0)
         {
             ret = -ERROR_SET_GUID_FD_CACHE;
-	        LOG4CXX_ERROR(g_logger, "UserBeacon set fd cache failed");
+            LOG4CXX_ERROR(g_logger, "UserBeacon set fd cache failed");
             goto out;
         }
-	    LOG4CXX_TRACE(g_logger, "UserBeacon first beacon, session is " << session_id);
+        LOG4CXX_TRACE(g_logger, "UserBeacon first beacon, session is " << session_id);
     }
     else if (conn_->is_online && conn_->guid != session_id)
     {
@@ -131,10 +131,10 @@ int CLogicOpt::UserBeacon()
         if (ret != 0)
         {
             ret = -ERROR_SET_GUID_FD_CACHE;
-	        LOG4CXX_ERROR(g_logger, "UserBeacon set fd cache failed");
+            LOG4CXX_ERROR(g_logger, "UserBeacon set fd cache failed");
             goto out;
         }
-	    LOG4CXX_TRACE(g_logger, "UserBeacon session changed, before session id is " << conn_->guid << ", now session id is " << session_id);
+        LOG4CXX_TRACE(g_logger, "UserBeacon session changed, before session id is " << conn_->guid << ", now session id is " << session_id);
     }
 
 out:
@@ -148,7 +148,7 @@ int CLogicOpt::HandlePushMsgResp()
     int msg_ret;
     int push_mid = 0;
 
-	LOG4CXX_TRACE(g_logger, "CLogicOpt::HandlePushMsgResp enter");
+    LOG4CXX_TRACE(g_logger, "CLogicOpt::HandlePushMsgResp enter");
 
     push_mid = jsonOpt_ptr_->GetMid();
 
@@ -156,7 +156,7 @@ int CLogicOpt::HandlePushMsgResp()
     if (ret != 0)
     {
         msg_ret = -ERROR_PARSE_MSG;
-	    LOG4CXX_ERROR(g_logger, "CLogicOpt::StartLogicOpt:HandlePushMsgResp failed");
+        LOG4CXX_ERROR(g_logger, "CLogicOpt::StartLogicOpt:HandlePushMsgResp failed");
     }
 
     g_wait_finish_push_msg_queue.FinishPushMsg(push_mid, msg_ret);
@@ -180,7 +180,7 @@ int CLogicOpt::SetGuidFdCache(string guid, int fd)
     }
 
 out:
-	CRedisConnPool::GetInstance()->ReleaseRedisContext(redis_con);
+    CRedisConnPool::GetInstance()->ReleaseRedisContext(redis_con);
 
     return ret;
 }
@@ -203,7 +203,7 @@ int CLogicOpt::GetGuidFdFromCache(string guid, int &fd)
 
     fd = atoi(fd_str.c_str());
 out:
-	CRedisConnPool::GetInstance()->ReleaseRedisContext(redis_con);
+    CRedisConnPool::GetInstance()->ReleaseRedisContext(redis_con);
 
     return ret;
 }
@@ -217,7 +217,7 @@ int CLogicOpt::RemoveGuidFdFromCache(string guid)
 
     redis_opt.Del(guid);
 
-	CRedisConnPool::GetInstance()->ReleaseRedisContext(redis_con);
+    CRedisConnPool::GetInstance()->ReleaseRedisContext(redis_con);
 
     return 0;
 }
@@ -240,7 +240,7 @@ int CLogicOpt::CheckSessionId(string guid)
     }
 
 out:
-	CRedisConnPool::GetInstance()->ReleaseRedisContext(redis_con);
+    CRedisConnPool::GetInstance()->ReleaseRedisContext(redis_con);
 
     return ret;
 }

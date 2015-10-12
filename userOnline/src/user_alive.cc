@@ -32,38 +32,38 @@ HttpClient *g_http_client = NULL;
 
 int main(int argc, char **argv)
 {
-	/* process arguments */
-	int c;
-	std::string version = std::string("1.0.387");
-	while (-1 != (c = getopt(argc, argv, "v" /* 获取程序版本号，配合svn */
-	)))
-	{
-		switch (c)
-		{
-		case 'v':
-			printf("The version is %s\n", version.c_str());
-			return EXIT_SUCCESS;
-		default:
-			break;
-		}
-	}
+    /* process arguments */
+    int c;
+    std::string version = std::string("1.0.387");
+    while (-1 != (c = getopt(argc, argv, "v" /* 获取程序版本号，配合svn */
+    )))
+    {
+        switch (c)
+        {
+        case 'v':
+            printf("The version is %s\n", version.c_str());
+            return EXIT_SUCCESS;
+        default:
+            break;
+        }
+    }
 
-	InitConfigure();
+    InitConfigure();
 
-	SettingsAndPrint();
+    SettingsAndPrint();
 
-	if(signal(SIGUSR1, SigUsr) == SIG_ERR)
-	{
-		LOG4CXX_FATAL(g_logger, "Configure signal failed.");
-		exit(EXIT_FAILURE);
-	}
+    if(signal(SIGUSR1, SigUsr) == SIG_ERR)
+    {
+        LOG4CXX_FATAL(g_logger, "Configure signal failed.");
+        exit(EXIT_FAILURE);
+    }
 
-	if (daemon(1, 0) == -1)
-	{
-		LOG4CXX_FATAL(g_logger, "daemon failed.");
-	}
+    if (daemon(1, 0) == -1)
+    {
+        LOG4CXX_FATAL(g_logger, "daemon failed.");
+    }
 
-	InitRedis();
+    InitRedis();
     setlocale(LC_ALL, "en_US.UTF-8");
     
     // clear redis data
@@ -82,9 +82,9 @@ int main(int argc, char **argv)
     CLocalTransport *local_transport = CLocalTransport::GetInstance();
     local_transport->SetupLocalTransport();
 
-	Run();
+    Run();
 
-	return EXIT_SUCCESS;
+    return EXIT_SUCCESS;
 }
 
 void ClearGuidFdCache()
@@ -126,7 +126,7 @@ void ClearGuidFdCache()
         }
     }
 
-	CRedisConnPool::GetInstance()->ReleaseRedisContext(redis_con);
+    CRedisConnPool::GetInstance()->ReleaseRedisContext(redis_con);
 
     return;
 }
@@ -144,7 +144,7 @@ int StartHttpClient()
     ret = g_http_client->Init();
     if (ret != 0)
     {
-		LOG4CXX_FATAL(g_logger, "http client init failed.");
+        LOG4CXX_FATAL(g_logger, "http client init failed.");
         return ret;
     }
 
@@ -159,66 +159,66 @@ void Run()
     g_msg_push_queue = new PushMsgQueue();
     g_msg_push_queue->Start();
 
-	CMasterThread masterThread;
-	if(!masterThread.InitMasterThread())
-	{
-		LOG4CXX_FATAL(g_logger, "InitMasterThread failed.");
-		exit(EXIT_FAILURE);
-	}
+    CMasterThread masterThread;
+    if(!masterThread.InitMasterThread())
+    {
+        LOG4CXX_FATAL(g_logger, "InitMasterThread failed.");
+        exit(EXIT_FAILURE);
+    }
 
-	masterThread.Run();
+    masterThread.Run();
 }
 
 void SigUsr(int signo)
 {
-	if(signo == SIGUSR1)
-	{
-		/* 重新加载应用配置文件（仅仅是连接超时时间），log4cxx日志配置文件*/
-		InitConfigure();
-		SettingsAndPrint();
-		LOG4CXX_INFO(g_logger, "reload configure.");
-		return;
-	}
+    if(signo == SIGUSR1)
+    {
+        /* 重新加载应用配置文件（仅仅是连接超时时间），log4cxx日志配置文件*/
+        InitConfigure();
+        SettingsAndPrint();
+        LOG4CXX_INFO(g_logger, "reload configure.");
+        return;
+    }
 }
 
 void InitConfigure()
 {
-	CInitConfig initConfObj;
-	initConfObj.SetConfigFilePath(std::string("/etc/jovision/alarm/conf/"));
-	std::string project_name = "userOnline";
-	initConfObj.InitLog4cxx(project_name);
-	if (!initConfObj.LoadConfiguration(project_name))
-	{
-		LOG4CXX_FATAL(g_logger, "LoadConfiguration failed.");
-		exit(EXIT_FAILURE);
-	}
+    CInitConfig initConfObj;
+    initConfObj.SetConfigFilePath(std::string("/etc/jovision/alarm/conf/"));
+    std::string project_name = "userOnline";
+    initConfObj.InitLog4cxx(project_name);
+    if (!initConfObj.LoadConfiguration(project_name))
+    {
+        LOG4CXX_FATAL(g_logger, "LoadConfiguration failed.");
+        exit(EXIT_FAILURE);
+    }
 }
 
 void InitRedis()
 {
-	RedisConnInfo redisConnInfo;
-	redisConnInfo.max_conn_num = 4;
-	redisConnInfo.ip = utils::G<ConfigFile>().read<std::string> ("redis.ip", "127.0.0.1");
-	redisConnInfo.port = utils::G<ConfigFile>().read<int> ("redis.port", 6379);
-	if (!CRedisConnPool::GetInstance()->Init(redisConnInfo))
-	{
-		LOG4CXX_FATAL(g_logger, "Init redisConnPool failed.");
-		exit(EXIT_FAILURE);
-	}
+    RedisConnInfo redisConnInfo;
+    redisConnInfo.max_conn_num = 4;
+    redisConnInfo.ip = utils::G<ConfigFile>().read<std::string> ("redis.ip", "127.0.0.1");
+    redisConnInfo.port = utils::G<ConfigFile>().read<int> ("redis.port", 6379);
+    if (!CRedisConnPool::GetInstance()->Init(redisConnInfo))
+    {
+        LOG4CXX_FATAL(g_logger, "Init redisConnPool failed.");
+        exit(EXIT_FAILURE);
+    }
 }
 
 void SettingsAndPrint()
 {
-	utils::G<CGlobalSettings>().remote_listen_port_ = utils::G<ConfigFile>().read<int> ("remote.listen.port", 15030);
-	utils::G<CGlobalSettings>().thread_num_= utils::G<ConfigFile>().read<int> ("worker.thread.num", 4);
-	utils::G<CGlobalSettings>().client_heartbeat_timeout_ = utils::G<ConfigFile>().read<int>("client.heartbeat.timeout", 11);
-	utils::G<CGlobalSettings>().local_listen_port_ = utils::G<ConfigFile>().read<int>("local.listen.port", 15031);
-	utils::G<CGlobalSettings>().local_conn_timeout_ = utils::G<ConfigFile>().read<int>("local.conn.timeout", 5);
-	utils::G<CGlobalSettings>().httpserver_url_ = utils::G<ConfigFile>().read<string>("httpserver.url", "http://127.0.0.1:8081/netalarm-rs/rsapi/userauth/logout");
+    utils::G<CGlobalSettings>().remote_listen_port_ = utils::G<ConfigFile>().read<int> ("remote.listen.port", 15030);
+    utils::G<CGlobalSettings>().thread_num_= utils::G<ConfigFile>().read<int> ("worker.thread.num", 4);
+    utils::G<CGlobalSettings>().client_heartbeat_timeout_ = utils::G<ConfigFile>().read<int>("client.heartbeat.timeout", 11);
+    utils::G<CGlobalSettings>().local_listen_port_ = utils::G<ConfigFile>().read<int>("local.listen.port", 15031);
+    utils::G<CGlobalSettings>().local_conn_timeout_ = utils::G<ConfigFile>().read<int>("local.conn.timeout", 5);
+    utils::G<CGlobalSettings>().httpserver_url_ = utils::G<ConfigFile>().read<string>("httpserver.url", "http://127.0.0.1:8081/netalarm-rs/rsapi/userauth/logout");
 
-	LOG4CXX_INFO(g_logger, "******userOnline.remote.listen.port = " << utils::G<CGlobalSettings>().remote_listen_port_ << "******");
-	LOG4CXX_INFO(g_logger, "******userOnline.worker.thread.num = "  << utils::G<CGlobalSettings>().thread_num_ << "******");
-	LOG4CXX_INFO(g_logger, "******userOnline.client.timeout.s = "   << utils::G<CGlobalSettings>().client_heartbeat_timeout_ << "******");
-	LOG4CXX_INFO(g_logger, "******userOnline.httpserver.url  = "   << utils::G<CGlobalSettings>().httpserver_url_ << "******");
+    LOG4CXX_INFO(g_logger, "******userOnline.remote.listen.port = " << utils::G<CGlobalSettings>().remote_listen_port_ << "******");
+    LOG4CXX_INFO(g_logger, "******userOnline.worker.thread.num = "  << utils::G<CGlobalSettings>().thread_num_ << "******");
+    LOG4CXX_INFO(g_logger, "******userOnline.client.timeout.s = "   << utils::G<CGlobalSettings>().client_heartbeat_timeout_ << "******");
+    LOG4CXX_INFO(g_logger, "******userOnline.httpserver.url  = "   << utils::G<CGlobalSettings>().httpserver_url_ << "******");
 }
 

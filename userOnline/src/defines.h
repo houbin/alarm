@@ -38,16 +38,16 @@ extern LoggerPtr g_logger;
 
 typedef struct
 {
-	char buf[DATA_BUFFER_SIZE];
-	unsigned int len;
-	int  sfd;
-	struct event_base 	*base;
+    char buf[DATA_BUFFER_SIZE];
+    unsigned int len;
+    int  sfd;
+    struct event_base     *base;
 }LOCAL_REV_DATA;
 
 typedef struct conn_queue_item CQ_ITEM;
 struct conn_queue_item {
     int               sfd;
-    int				  id;
+    int                  id;
     CQ_ITEM          *next;
 };
 
@@ -61,12 +61,12 @@ struct conn_queue {
 };
 
 typedef struct {
-    pthread_t 			thread_id;        	/* unique ID of this thread */
-    struct event_base 	*base;    			/* libevent handle this thread uses */
-    struct event 		notify_event;  		/* listen event for notify pipe */
-    int 				notify_receive_fd;  /* receiving end of notify pipe */
-    int 				notify_send_fd;     /* sending end of notify pipe */
-    struct conn_queue 	*new_conn_queue; 	/* queue of new connections to handle */
+    pthread_t             thread_id;            /* unique ID of this thread */
+    struct event_base     *base;                /* libevent handle this thread uses */
+    struct event         notify_event;          /* listen event for notify pipe */
+    int                 notify_receive_fd;  /* receiving end of notify pipe */
+    int                 notify_send_fd;     /* sending end of notify pipe */
+    struct conn_queue     *new_conn_queue;     /* queue of new connections to handle */
 } LIBEVENT_THREAD;
 
 typedef struct conn conn;
@@ -78,7 +78,7 @@ struct conn {
     char*  wBuf;
     int    wlen;
     bool   isVerify;
-    conn   *next;     		 /* Used for generating a list of conn structures */
+    conn   *next;              /* Used for generating a list of conn structures */
     LIBEVENT_THREAD *thread; /* Pointer to the thread object serving this connection */
 
     bool is_online;

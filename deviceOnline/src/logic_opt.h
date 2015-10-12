@@ -19,10 +19,10 @@ class CRedisOpt;
 class CLogicOpt
 {
 public:
-	explicit CLogicOpt(conn* c);
-	virtual ~CLogicOpt();
+    explicit CLogicOpt(conn* c);
+    virtual ~CLogicOpt();
 
-	void StartLogicOpt(const std::string& message);
+    void StartLogicOpt(const std::string& message);
 
     static int SetDeviceFdCache(std::string dev_id, int fd);
     static int GetDeviceFdFromCache(std::string dev_id, int &fd);
@@ -36,24 +36,24 @@ public:
 private:
 
     int DeviceLogin();
-	int DeviceBeacon();
+    int DeviceBeacon();
     int HandleSetStreamServerResp();
     int HandlePushMsgResp();
 
 private:
 
-	void SendToClient();
+    void SendToClient();
 
 private:
 
-	CJsonOpt*	jsonOpt_ptr_;
+    CJsonOpt*    jsonOpt_ptr_;
 
-	int 		result_;
-	conn* 		conn_;
-	std::string responseToClient_;
+    int         result_;
+    conn*         conn_;
+    std::string responseToClient_;
 
     bool is_online_;
-	std::string dev_id_;
+    std::string dev_id_;
 };
 
 #endif /* MESSAGE_OPT_H_ */

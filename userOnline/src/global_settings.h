@@ -12,17 +12,17 @@
 class CGlobalSettings
 {
 public:
-	int remote_listen_port_;
-	unsigned int thread_num_;
+    int remote_listen_port_;
+    unsigned int thread_num_;
 
     int local_listen_port_;
     int local_conn_timeout_;
 
 
-	std::string redis_ip_;
-	int redis_port_;
+    std::string redis_ip_;
+    int redis_port_;
 
-	int client_heartbeat_timeout_;
+    int client_heartbeat_timeout_;
 
     std::string httpserver_url_;
 };

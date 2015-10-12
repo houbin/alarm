@@ -15,7 +15,7 @@ using namespace std;
 
 CJsonOpt::CJsonOpt()
 {
-	send_cnt_ = 0;
+    send_cnt_ = 0;
 }
 
 CJsonOpt::~CJsonOpt()
@@ -24,8 +24,8 @@ CJsonOpt::~CJsonOpt()
 
 void CJsonOpt::setJsonString(const std::string &msg)
 {
-	out_ = JSONNode();
-	json_string_ = msg;
+    out_ = JSONNode();
+    json_string_ = msg;
 }
 
 int CJsonOpt::GetMethod(string &method)

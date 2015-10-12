@@ -14,42 +14,42 @@
 
 typedef struct redisConnInfo_
 {
-	int max_conn_num;
-	std::string ip;
-	int port;
+    int max_conn_num;
+    std::string ip;
+    int port;
 } RedisConnInfo;
 
 class CRedisConnPool
 {
 public:
 
-	static CRedisConnPool* GetInstance();
+    static CRedisConnPool* GetInstance();
 
-	bool Init(const RedisConnInfo& redisConnInfo);
-	void Destroy();
+    bool Init(const RedisConnInfo& redisConnInfo);
+    void Destroy();
 
-	redisContext* GetRedisContext();
-	void ReleaseRedisContext(redisContext* conn);
+    redisContext* GetRedisContext();
+    void ReleaseRedisContext(redisContext* conn);
 
 private:
-	CRedisConnPool();
-	virtual ~CRedisConnPool();
+    CRedisConnPool();
+    virtual ~CRedisConnPool();
 
-	redisContext* CreateNewRedisContext();
+    redisContext* CreateNewRedisContext();
 
-	void SafeRedisFree(redisContext *conn)
-	{
-		if (conn)
-		{
-			redisFree(conn);
-			conn = NULL;
-		}
-	}
+    void SafeRedisFree(redisContext *conn)
+    {
+        if (conn)
+        {
+            redisFree(conn);
+            conn = NULL;
+        }
+    }
 
-	static CRedisConnPool* redisConnPool_;
-	static boost::mutex instance_mutex_;
-	std::deque<redisContext*> queue_redisContext_;
-	RedisConnInfo redisConnInfo_;
+    static CRedisConnPool* redisConnPool_;
+    static boost::mutex instance_mutex_;
+    std::deque<redisContext*> queue_redisContext_;
+    RedisConnInfo redisConnInfo_;
 };
 
 #endif /* REDIS_CONN_POOL_H_ */

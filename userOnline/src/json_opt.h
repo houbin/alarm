@@ -18,10 +18,10 @@ using namespace std;
 class CJsonOpt
 {
 public:
-	CJsonOpt();
-	virtual ~CJsonOpt();
+    CJsonOpt();
+    virtual ~CJsonOpt();
 
-	void setJsonString(const std::string &msg);
+    void setJsonString(const std::string &msg);
     int GetMethod(string &method);
     int GetMid();
     bool VerifyJsonField(const string &field);
@@ -50,11 +50,11 @@ private:
     bool JsonParseField(const string &field);
 
 private:
-	std::string json_string_;
-	JSONNode in_;
-	JSONNode out_;
+    std::string json_string_;
+    JSONNode in_;
+    JSONNode out_;
 
-	unsigned int mid_;
+    unsigned int mid_;
     string method_;
 };
 

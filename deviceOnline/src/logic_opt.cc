@@ -20,37 +20,37 @@
 
 CLogicOpt::CLogicOpt(conn* c)
 {
-	conn_ = c;
-	result_ = 0;
+    conn_ = c;
+    result_ = 0;
     is_online_ = false;
-	jsonOpt_ptr_ = new CJsonOpt;
-	assert(jsonOpt_ptr_ != NULL);
+    jsonOpt_ptr_ = new CJsonOpt;
+    assert(jsonOpt_ptr_ != NULL);
 }
 
 CLogicOpt::~CLogicOpt()
 {
-	utils::SafeDelete(jsonOpt_ptr_);
+    utils::SafeDelete(jsonOpt_ptr_);
 }
 
 void CLogicOpt::StartLogicOpt(const std::string& message)
 {
     int ret = 0;
-	std::string custom_msg;
+    std::string custom_msg;
     string method;
 
-	LOG4CXX_INFO(g_logger, "CLogicOperate::StartLogicOpt" << message);
+    LOG4CXX_INFO(g_logger, "CLogicOperate::StartLogicOpt" << message);
 
-	jsonOpt_ptr_->setJsonString(message);
+    jsonOpt_ptr_->setJsonString(message);
     if (!jsonOpt_ptr_->JsonParseCommon())
     {
-		LOG4CXX_ERROR(g_logger, "CLogicOperate::StartLogicOpt:JsonParseCommon failed:" << message);
+        LOG4CXX_ERROR(g_logger, "CLogicOperate::StartLogicOpt:JsonParseCommon failed:" << message);
         return;
     }
 
     ret = jsonOpt_ptr_->GetMethod(method);
     if (ret != 0)
     {
-		LOG4CXX_ERROR(g_logger, "CLogicOperate::StartLogicOpt:GetMethod failed:" << message);
+        LOG4CXX_ERROR(g_logger, "CLogicOperate::StartLogicOpt:GetMethod failed:" << message);
         return;
     }
 
@@ -67,7 +67,7 @@ void CLogicOpt::StartLogicOpt(const std::string& message)
     else // (method == METHOD_SET_STREAMSERVER_ADDR)
     {
         //其他的method认为是推送消息的回复消息
-		LOG4CXX_ERROR(g_logger, "CLogicOpt::StartLogicOpt method is " << method);
+        LOG4CXX_ERROR(g_logger, "CLogicOpt::StartLogicOpt method is " << method);
         HandlePushMsgResp();
         return;
     }
@@ -89,12 +89,12 @@ int CLogicOpt::DeviceLogin()
     int ret = 0;
     deque<int> auth_data;
 
-	LOG4CXX_TRACE(g_logger, "CLogicOpt::DeviceLogin enter");
+    LOG4CXX_TRACE(g_logger, "CLogicOpt::DeviceLogin enter");
 
     ret = jsonOpt_ptr_->JsonParseLogin(dev_id_, auth_data);
     if (ret != 0)
     {
-	    LOG4CXX_ERROR(g_logger, "CLogicOpt::DeviceLogin parse login error, ret is " << ret);
+        LOG4CXX_ERROR(g_logger, "CLogicOpt::DeviceLogin parse login error, ret is " << ret);
         goto out;
     }
 
@@ -119,7 +119,7 @@ int CLogicOpt::DeviceLogin()
         ret = getpeername(conn_->sfd, (struct sockaddr*)&dev_addr, &len);
         if (ret != 0)
         {
-	        LOG4CXX_ERROR(g_logger, "DeviceBeacon getpeername failed, errno is " << -errno);
+            LOG4CXX_ERROR(g_logger, "DeviceBeacon getpeername failed, errno is " << -errno);
             ret = -errno;
             goto out;
         }
@@ -129,7 +129,7 @@ int CLogicOpt::DeviceLogin()
         ret = CLogicOpt::SetDeviceFdCache(conn_->dev_id, conn_->sfd);
         if (ret != 0)
         {
-	        LOG4CXX_ERROR(g_logger, "DeviceBeacon set fd cache failed");
+            LOG4CXX_ERROR(g_logger, "DeviceBeacon set fd cache failed");
             ret = -ERROR_SET_DEVICE_FD_CACHE;
             goto out;
         }
@@ -139,7 +139,7 @@ int CLogicOpt::DeviceLogin()
         ret = CLogicOpt::SetDeviceAddrCache(conn_->dev_id, dev_public_addr, dev_private_addr, dev_ip);
         if (ret != 0)
         {
-	        LOG4CXX_ERROR(g_logger, "DeviceBeacon getsockname error");
+            LOG4CXX_ERROR(g_logger, "DeviceBeacon getsockname error");
             goto out;
         }
 
@@ -153,7 +153,7 @@ int CLogicOpt::DeviceLogin()
         SendMsg send_msg(url, msg_info);
         g_http_client->SubmitMsg(send_msg);
 
-	    LOG4CXX_TRACE(g_logger, "DeviceBeacon ok, dev_id is " << conn_->dev_id << ", sfd is " << conn_->sfd);
+        LOG4CXX_TRACE(g_logger, "DeviceBeacon ok, dev_id is " << conn_->dev_id << ", sfd is " << conn_->sfd);
     }
 
 out:
@@ -166,25 +166,25 @@ int CLogicOpt::DeviceBeacon()
     int ret = 0;
     string dev_id;
 
-	LOG4CXX_TRACE(g_logger, "CLogicOpt::DeviceBeacon enter");
+    LOG4CXX_TRACE(g_logger, "CLogicOpt::DeviceBeacon enter");
 
     ret = jsonOpt_ptr_->JsonParseBeacon(dev_id);
     if (ret != 0)
     {
-	    LOG4CXX_ERROR(g_logger, "CLogicOpt::StartLogicOpt:JsonParseBecon failed");
+        LOG4CXX_ERROR(g_logger, "CLogicOpt::StartLogicOpt:JsonParseBecon failed");
         goto out;
     }
 
     if (!conn_)
     {
-	    LOG4CXX_ERROR(g_logger, "DeviceBeacon device conn_ is null");
+        LOG4CXX_ERROR(g_logger, "DeviceBeacon device conn_ is null");
         ret = -ERROR_DEVICE_CONNECT;
         goto out;
     }
 
     if (!conn_->is_login)
     {
-	    LOG4CXX_ERROR(g_logger, "DeviceBeacon device conn_ is null");
+        LOG4CXX_ERROR(g_logger, "DeviceBeacon device conn_ is null");
         ret = -ERROR_DEVICE_NOT_LOGIN;
         goto out;
     }
@@ -215,7 +215,7 @@ int CLogicOpt::HandlePushMsgResp()
     if (ret != 0)
     {
         msg_ret = -ERROR_PARSE_MSG;
-	    LOG4CXX_ERROR(g_logger, "CLogicOpt::StartLogicOpt:HandlePushMsgResp failed");
+        LOG4CXX_ERROR(g_logger, "CLogicOpt::StartLogicOpt:HandlePushMsgResp failed");
     }
 
     g_wait_finish_push_msg_queue.FinishPushMsg(push_cnt, msg_ret, param_node);
@@ -238,7 +238,7 @@ int CLogicOpt::SetDeviceFdCache(string dev_id, int fd)
     }
 
 out:
-	CRedisConnPool::GetInstance()->ReleaseRedisContext(redis_con);
+    CRedisConnPool::GetInstance()->ReleaseRedisContext(redis_con);
 
     return ret;
 }
@@ -260,7 +260,7 @@ int CLogicOpt::GetDeviceFdFromCache(string dev_id, int &fd)
 
     fd = atoi(fd_str.c_str());
 out:
-	CRedisConnPool::GetInstance()->ReleaseRedisContext(redis_con);
+    CRedisConnPool::GetInstance()->ReleaseRedisContext(redis_con);
 
     return ret;
 }
@@ -274,7 +274,7 @@ int CLogicOpt::RemoveDeviceFdFromCache(string dev_id)
 
     redis_opt.Hdel(dev_id, REDIS_FIELD_FD);
 
-	CRedisConnPool::GetInstance()->ReleaseRedisContext(redis_con);
+    CRedisConnPool::GetInstance()->ReleaseRedisContext(redis_con);
 
     return 0;
 }
@@ -309,7 +309,7 @@ int CLogicOpt::SetDeviceAddrCache(string dev_id, string public_addr, string priv
     }
 
 out:
-	CRedisConnPool::GetInstance()->ReleaseRedisContext(redis_con);
+    CRedisConnPool::GetInstance()->ReleaseRedisContext(redis_con);
 
     return ret;
 }
@@ -341,7 +341,7 @@ int CLogicOpt::GetDeviceAddrFromCache(string dev_id, string &public_addr, string
     }
 
 out:
-	CRedisConnPool::GetInstance()->ReleaseRedisContext(redis_con);
+    CRedisConnPool::GetInstance()->ReleaseRedisContext(redis_con);
 
     return ret;
 }
@@ -357,7 +357,7 @@ int CLogicOpt::RemoveDeviceAddrFromCache(string dev_id)
     redis_opt.Hdel(dev_id, REDIS_FIELD_PRIVATE_ADDR);
     redis_opt.Hdel(dev_id, REDIS_FIELD_DEV_IP);
 
-	CRedisConnPool::GetInstance()->ReleaseRedisContext(redis_con);
+    CRedisConnPool::GetInstance()->ReleaseRedisContext(redis_con);
 
     return 0;
 }
@@ -371,7 +371,7 @@ int CLogicOpt::RemoveDeviceFromCache(string dev_id)
 
     redis_opt.Del(dev_id);
 
-	CRedisConnPool::GetInstance()->ReleaseRedisContext(redis_con);
+    CRedisConnPool::GetInstance()->ReleaseRedisContext(redis_con);
 
     return 0;
 }

@@ -16,36 +16,36 @@ class CWorkerThread;
 class CMasterThread
 {
 public:
-	CMasterThread();
-	virtual ~CMasterThread();
+    CMasterThread();
+    virtual ~CMasterThread();
 
 public:
 
-	bool InitMasterThread();
+    bool InitMasterThread();
 
-	void Run();
+    void Run();
 
-	static CThreadSafeMap<int, int> map_csfd_id_;          //客户端连接sfd-->随机唯一id，和业务进程传来的sfd和id对应，防止sfd被其他客户端重用导致错发
-
-private:
-
-	bool CheckLibeventVersion();
-
-	bool InitRemoteListenSocket(evutil_socket_t& listen_socket);
-
-	static void AccepCb(evutil_socket_t listen_socket, short event, void* arg);
-
-	static int  GetClientfdMapId();
+    static CThreadSafeMap<int, int> map_csfd_id_;          //客户端连接sfd-->随机唯一id，和业务进程传来的sfd和id对应，防止sfd被其他客户端重用导致错发
 
 private:
 
-	struct event_base 	*main_base_;
-	evutil_socket_t 	remote_listen_socket_;
-	struct event		*listen_event_;
+    bool CheckLibeventVersion();
 
-	static int id_;
+    bool InitRemoteListenSocket(evutil_socket_t& listen_socket);
 
-	CWorkerThread			*work_thread_ptr_;
+    static void AccepCb(evutil_socket_t listen_socket, short event, void* arg);
+
+    static int  GetClientfdMapId();
+
+private:
+
+    struct event_base     *main_base_;
+    evutil_socket_t     remote_listen_socket_;
+    struct event        *listen_event_;
+
+    static int id_;
+
+    CWorkerThread            *work_thread_ptr_;
 };
 
 
