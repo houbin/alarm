@@ -296,7 +296,10 @@ void CWorkerThread::ClientTcpErrorCb(struct bufferevent *bev, short event, void 
     {
         // 清理redis数据
         CLogicOpt::RemoveGuidFdFromCache(c->guid);
+    }
 
+    if (c->is_online && !(event & BEV_EVENT_EOF))
+    {
         // 通知用户心跳异常
         CJsonOpt json_opt;
         int mid = g_http_client_mid++;
@@ -305,7 +308,6 @@ void CWorkerThread::ClientTcpErrorCb(struct bufferevent *bev, short event, void 
         SendMsg send_msg(url, msg_info);
         g_http_client->SubmitMsg(send_msg);
     }
-
 
     // 清理工作
     c->is_online = false;

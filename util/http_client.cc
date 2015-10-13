@@ -181,7 +181,7 @@ int HttpClient::MakeHttpReq(SendMsg send_msg, struct evhttp_request **req)
     struct evkeyvalq *output_headers = NULL;
     output_headers = evhttp_request_get_output_headers(*req);
     evhttp_add_header(output_headers, "Host", host.c_str());
-    evhttp_add_header(output_headers, "Content-Type", "application/json");
+    evhttp_add_header(output_headers, "Content-Type", "application/json;charset=UTF-8");
     evhttp_add_header(output_headers, "Connection", "close");
 
     struct evbuffer *output_buffer = NULL;
